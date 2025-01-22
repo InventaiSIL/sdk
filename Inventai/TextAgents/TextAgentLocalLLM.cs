@@ -1,29 +1,31 @@
 using Inventai.Core;
+using OpenAI;
 using OpenAI.Chat;
 using System.ClientModel;
 
 namespace Inventai.TextAgents
 {
-    public class TextAgentOpenAI : ITextAgent
+    public class TextAgentLocalLLM : ITextAgent
     {
         private readonly ChatClient _chatClient;
 
-        public TextAgentOpenAI(string model, string apiKey)
+        public TextAgentLocalLLM(string model, Uri endpoint)
         {
             try
             {
-                _chatClient = new ChatClient(model, new ApiKeyCredential(apiKey));
+                _chatClient = new ChatClient(model, new ApiKeyCredential("dummy"), new OpenAIClientOptions { Endpoint = endpoint });
             }
             catch (Exception e)
             {
-                throw new ChatClientException($"Error creating the chat client. Please check your API keys - {e}");
+                throw new ChatClientException($"Error creating the chat client with local LLM - {e}");
             }
         }
 
         public string CompleteMessage(string message)
         {
             ChatCompletion completion = _chatClient.CompleteChat(message);
-            return completion.Content[0].Text; // we ignore the potential attachments
+            return completion.Content[0].Text;
         }
     }
 }
+
