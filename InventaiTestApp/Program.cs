@@ -1,14 +1,5 @@
-<<<<<<< Updated upstream
 ﻿using Inventai.TextAgents;
-using Inventai.Core;
-
-try
-{
-    TextAgentOpenAI agent = new(EOpenAITextModels.GPT4omini);
-    Console.WriteLine(agent.CompleteMessage("Say 'This is a test.'"));
-=======
 ﻿using Inventai.ImageAgents;
-using Inventai.TextAgents;
 
 try
 {
@@ -44,7 +35,6 @@ try
 
         await File.WriteAllBytesAsync("segmindImage.jpg", segmindImage);
     }
->>>>>>> Stashed changes
 }
 catch (Exception e)
 {
