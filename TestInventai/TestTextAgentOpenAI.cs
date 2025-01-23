@@ -10,7 +10,11 @@ namespace TestInventai
         [SetUp]
         public void Setup()
         {
-            Agent = new(EOpenAITextModels.GPT4omini);
+            string? apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+            if (string.IsNullOrEmpty(apiKey))
+                throw new InvalidOperationException("OPENAI_API_KEY environment variable is not set");
+
+            Agent = new(EOpenAITextModels.GPT4omini, apiKey);
         }
 
         [Test]
