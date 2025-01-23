@@ -3,7 +3,7 @@
 /// <summary>
 /// Exception raised when a chat client encounters issues
 /// </summary>
-/// <param name="message"></param>
-public class ChatClientException(string? message) : Exception(message)
+/// <param name="pMessage"></param>
+public class ChatClientException(string? pMessage) : Exception(pMessage)
 {
 }

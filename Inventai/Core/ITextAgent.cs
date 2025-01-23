@@ -1,5 +1,7 @@
 ﻿namespace Inventai.Core;
 
+
+
 /// <summary>
 /// Base interface to be implemented by the text agents
 /// </summary>

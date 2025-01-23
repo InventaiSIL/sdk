@@ -1,0 +1,62 @@
+using Inventai.Core;
+using System.Text;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
+
+namespace Inventai.ImageAgents;
+
+public class SnakeCasePropertyNamesContractResolver : DefaultContractResolver
+{
+    public SnakeCasePropertyNamesContractResolver()
+    {
+        NamingStrategy = new SnakeCaseNamingStrategy();
+    }
+}
+
+
+
+/// <summary>
+/// Stable diffusion Image agent
+/// </summary>
+public class ImageAgentStableDiffusion : IImageAgent
+{
+    /// <summary>
+    /// Http Client of the agent
+    /// </summary>
+    private readonly HttpClient _httpClient;
+
+    /// <summary>
+    /// Stable diffusion API endpoint
+    /// </summary>
+    private readonly string _endpoint;
+
+    private readonly JsonSerializerSettings _settings = new()
+    {
+        ContractResolver = new SnakeCasePropertyNamesContractResolver(),
+        Formatting = Formatting.Indented
+    };
+
+    /// <summary>
+    /// Ctor
+    /// </summary>
+    /// <param name="pEndpoint"></param>
+    public ImageAgentStableDiffusion(string pEndpoint, string pApiKey)
+    {
+        _httpClient = new();
+        // Add X-API-Key to request headers
+        _httpClient.DefaultRequestHeaders.Clear();
+        _httpClient.DefaultRequestHeaders.Add("X-API-Key", pApiKey);
+        _endpoint = pEndpoint;
+    }
+
+    public async Task<byte[]> GenerateImageAsync(ImageRequest pRequest)
+    {
+        var response = await _httpClient.PostAsync(_endpoint,
+            new StringContent(JsonConvert.SerializeObject(pRequest, _settings), Encoding.UTF8, "application/json"));
+
+        response.EnsureSuccessStatusCode();
+        // Read the image as a byte array
+        var imageData = await response.Content.ReadAsByteArrayAsync();
+        return imageData;
+    }
+}

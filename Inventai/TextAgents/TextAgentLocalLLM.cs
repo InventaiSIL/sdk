@@ -3,29 +3,35 @@ using OpenAI;
 using OpenAI.Chat;
 using System.ClientModel;
 
-namespace Inventai.TextAgents
+
+namespace Inventai.TextAgents;
+
+public class TextAgentLocalLlm : ITextAgent
 {
-    public class TextAgentLocalLLM : ITextAgent
+    private readonly ChatClient _chatClient;
+
+    /// <summary>
+    /// Ctor
+    /// </summary>
+    /// <param name="pModel"></param>
+    /// <param name="pEndpoint"></param>
+    /// <exception cref="ChatClientException"></exception>
+    public TextAgentLocalLlm(string pModel, Uri pEndpoint)
     {
-        private readonly ChatClient _chatClient;
-
-        public TextAgentLocalLLM(string model, Uri endpoint)
+        try
         {
-            try
-            {
-                _chatClient = new ChatClient(model, new ApiKeyCredential("dummy"), new OpenAIClientOptions { Endpoint = endpoint });
-            }
-            catch (Exception e)
-            {
-                throw new ChatClientException($"Error creating the chat client with local LLM - {e}");
-            }
+            _chatClient = new ChatClient(pModel, new ApiKeyCredential("dummy"), new OpenAIClientOptions { Endpoint = pEndpoint });
         }
-
-        public string CompleteMessage(string message)
+        catch (Exception e)
         {
-            ChatCompletion completion = _chatClient.CompleteChat(message);
-            return completion.Content[0].Text;
+            throw new ChatClientException($"Error creating the chat client with local LLM - {e}");
         }
+    }
+
+    public string CompleteMessage(string pMessage)
+    {
+        ChatCompletion completion = _chatClient.CompleteChat(pMessage);
+        return completion.Content[0].Text;
     }
 }
 
