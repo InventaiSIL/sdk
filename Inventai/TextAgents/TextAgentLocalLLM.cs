@@ -3,6 +3,7 @@ using OpenAI;
 using OpenAI.Chat;
 using System.ClientModel;
 
+
 namespace Inventai.TextAgents;
 
 public class TextAgentLocalLlm : ITextAgent
