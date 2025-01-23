@@ -1,26 +1,8 @@
 using Inventai.Core;
 using OpenAI.Chat;
+using System.ClientModel;
 
 namespace Inventai.TextAgents;
-
-<<<<<<< Updated upstream
-/// <summary>
-/// OpenAI Agent
-/// </summary>
-public class TextAgentOpenAI : ITextAgent
-{
-    private readonly ChatClient _chatClient;
-
-    public TextAgentOpenAI(string pModel)
-    {
-        try
-        {
-            _chatClient = new(model: pModel, apiKey: Environment.GetEnvironmentVariable("OPENAI_API_KEY"));
-        }
-        catch (Exception e)
-        {
-            throw new ChatClientException($"Error creating the chat client. Please check your API keys - ${e}");
-=======
 
 /// <summary>
 /// List of available OpenAI text models
@@ -56,20 +38,12 @@ public class TextAgentOpenAI : ITextAgent
         catch (Exception e)
         {
             throw new ChatClientException($"Error creating the chat client. Please check your API keys - {e}");
->>>>>>> Stashed changes
         }
     }
 
     public string CompleteMessage(string pMessage)
     {
         ChatCompletion completion = _chatClient.CompleteChat(pMessage);
-<<<<<<< Updated upstream
-
         return completion.Content[0].Text; // we ignore the potential attachments
     }
 }
-=======
-        return completion.Content[0].Text; // we ignore the potential attachments
-    }
-}
->>>>>>> Stashed changes
