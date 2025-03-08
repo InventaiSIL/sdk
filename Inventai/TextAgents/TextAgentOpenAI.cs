@@ -34,6 +34,7 @@ public class TextAgentOpenAI : ITextAgent
         try
         {
             _chatClient = new ChatClient(pModel, new ApiKeyCredential(pApiKey));
+            Console.WriteLine($"OpenAI chat client created with model {pModel}");
         }
         catch (Exception e)
         {
