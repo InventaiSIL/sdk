@@ -1,5 +1,6 @@
 ﻿using Inventai.TextAgents;
 ﻿using Inventai.ImageAgents;
+using Inventai.Discussion;
 
 static void TestOpenai()
 {
@@ -51,7 +52,7 @@ static void TestDiscussionContextChoices()
     {
         TextAgentOpenAI agent = new("gpt-3.5-turbo", openaiApiKey);
 
-        Inventai.Src.Discussion.DiscussionContextManager discussionContextManager = new(agent);
+        DiscussionContextManager discussionContextManager = new(agent);
 
         Inventai.Core.Discussion.ContextualChoicesRequest request = new()
         {
@@ -75,7 +76,7 @@ static void TextDiscussionContextChat()
     {
         TextAgentOpenAI agent = new("gpt-3.5-turbo", openaiApiKey);
 
-        Inventai.Src.Discussion.DiscussionContextManager discussionContextManager = new(agent);
+        DiscussionContextManager discussionContextManager = new(agent);
 
         Inventai.Core.Discussion.EntitiesChatRequest request = new()
         {
@@ -92,12 +93,13 @@ static void TextDiscussionContextChat()
                     Id = "2",
                     Name = "Person 2"
                 }
-            ]
+            ],
+            NumMessages = 3
         };
 
         Inventai.Core.Discussion.EntitiesChatResponse response = discussionContextManager.GenerateEntitiesChat(request);
 
-        Console.WriteLine("Entities: " + response.ToString());
+        Console.WriteLine("Entities: " + response.ToJson());
     }
 }
 

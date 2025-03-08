@@ -1,17 +1,19 @@
-﻿
-using Inventai.Core.Discussion;
+﻿using Inventai.Core.Discussion;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Text;
 
-namespace Inventai.Src.Discussion
+namespace Inventai.Discussion
 {
     /// <summary>
     /// Inventai's discussion context
     /// </summary>
     public class DiscussionContextManager : IDiscussionContext
     {
-        private readonly Inventai.Core.ITextAgent m_TextAgent;
+        /// <summary>
+        /// The text agent to use
+        /// </summary>
+        private readonly Core.ITextAgent m_TextAgent;
 
         /// <summary>
         /// Ctor
@@ -53,23 +55,29 @@ namespace Inventai.Src.Discussion
             var prompt = new StringBuilder();
             prompt.Append("You have to generate ");
             prompt.Append(pRequest.NumMessages);
-            prompt.Append(" messages between the entities ");
-            prompt.Append(pRequest.Entities.ToString());
+            prompt.Append(" messages between the entities: ");
+            prompt.Append(pRequest.Entities.Select(e => e.Name).Aggregate((a, b) => a + ", " + b));
             prompt.Append(" for the prompt: ");
             prompt.Append(pRequest.Prompt);
             prompt.Append(" with the context: ");
             prompt.Append(pRequest.Context);
             prompt.Append(".\n");
-            prompt.Append("Respond with only the entities chats as JSON that is of type EntitiesDiscussion that contains the Participants and EntitiesMessage. EntitiesMessage contains an entity and a message.");
+            prompt.Append("Respond with only the entities chats as JSON that contains the Participants (list of participants) and EntitiesMessages " +
+                "(list of object containing EntityId and a Message.");
 
             var responseString = m_TextAgent.CompleteMessage(prompt.ToString());
 
-            Console.WriteLine(responseString);
+            try
+            {
+                var response = JsonConvert.DeserializeObject<EntitiesChatResponse>(responseString);
 
-            // Assuming responseString is a JSON string, we need to deserialize it to List<EntitiesDiscussion>
-            var response = JsonConvert.DeserializeObject<EntitiesChatResponse>(responseString);
-
-            return response;
+                return response ?? new EntitiesChatResponse() { Participants = [], EntitiesMessages = [] };
+            }
+            catch (JsonException e)
+            {
+                Debug.WriteLine(e.Message);
+                return new EntitiesChatResponse() { Participants = [], EntitiesMessages = [] };
+            }
         }
     }
 }

@@ -8,12 +8,12 @@ namespace Inventai.Core.Discussion
         /// <summary>
         /// Prompt for which choices are to be generated
         /// </summary>
-        public string Prompt { get; set; }
+        public required string Prompt { get; set; }
 
         /// <summary>
         /// Context for the prompt
         /// </summary>
-        public string Context { get; set; }
+        public required string Context { get; set; }
 
         /// <summary>
         /// Number of choices to generate
@@ -29,6 +29,6 @@ namespace Inventai.Core.Discussion
         /// <summary>
         /// List of generated choices
         /// </summary>
-        public string[] Choices { get; set; }
+        public required string[] Choices { get; set; }
     }
 }

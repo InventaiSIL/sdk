@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace Inventai.Core.Discussion
 {
     /// <summary>
@@ -18,24 +20,24 @@ namespace Inventai.Core.Discussion
 
     public record class EntityExample : IChatInteractableEntityBase
     {
-        public string Id { get; set; }
-        public string Name { get; set; }
+        public required string Id { get; set; }
+        public required string Name { get; set; }
     }
 
     /// <summary>
-    /// Entities messsages
+    /// Entity messsage
     /// </summary>
     public record class EntityMessage
     {
         /// <summary>
         /// The entity sending the message
         /// </summary>
-        public IChatInteractableEntityBase Entity { get; set; }
+        public required string EntityId { get; set; }
 
         /// <summary>
         /// The message
         /// </summary>
-        public string Message { get; set; }
+        public required string Message { get; set; }
     }
 
     /// <summary>
@@ -46,12 +48,18 @@ namespace Inventai.Core.Discussion
         /// <summary>
         /// List of participants
         /// </summary>
-        public List<string> Participants { get; set; }
+        public required List<string> Participants { get; set; }
 
         /// <summary>
         /// List of messages
         /// </summary>
-        public List<EntityMessage> EntitiesMessage { get; set; }
+        public required List<EntityMessage> EntitiesMessages { get; set; }
+
+        
+        public virtual string ToJson()
+        {
+            return JsonSerializer.Serialize(this);
+        }
     }
 
     /// <summary>
@@ -62,17 +70,17 @@ namespace Inventai.Core.Discussion
         /// <summary>
         /// Prompt for which entities are to be generated
         /// </summary>
-        public string Prompt { get; set; }
+        public required string Prompt { get; set; }
 
         /// <summary>
         /// Context for the prompt
         /// </summary>
-        public string Context { get; set; }
+        public string? Context { get; set; }
 
         /// <summary>
-        /// Entities to generate
+        /// Entities to generate the chats for
         /// </summary>
-        public IChatInteractableEntityBase[] Entities { get; set; }
+        public required EntityExample[] Entities { get; set; }
 
         /// <summary>
         /// Number of messages to generate
