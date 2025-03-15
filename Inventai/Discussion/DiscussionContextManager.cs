@@ -1,6 +1,9 @@
 ﻿using Inventai.Core.Discussion;
 using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Text;
 
 namespace Inventai.Discussion
@@ -41,7 +44,7 @@ namespace Inventai.Discussion
 
             var responseString = m_TextAgent.CompleteMessage(prompt.ToString());
 
-            var response = responseString.Split("\n");
+            var response = responseString.Split('\n');
 
             Console.WriteLine(response.Length + " choices generated");
 
@@ -71,12 +74,12 @@ namespace Inventai.Discussion
             {
                 var response = JsonConvert.DeserializeObject<EntitiesChatResponse>(responseString);
 
-                return response ?? new EntitiesChatResponse() { Participants = [], EntitiesMessages = [] };
+                return response ?? new EntitiesChatResponse() { Participants = new List<string>(), EntitiesMessages = new List<EntityMessage>() };
             }
             catch (JsonException e)
             {
                 Debug.WriteLine(e.Message);
-                return new EntitiesChatResponse() { Participants = [], EntitiesMessages = [] };
+                return new EntitiesChatResponse() { Participants = new List<string>(), EntitiesMessages = new List<EntityMessage>() };
             }
         }
     }

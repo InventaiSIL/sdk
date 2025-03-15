@@ -1,16 +1,17 @@
-﻿namespace Inventai.Core;
-
-
-
-/// <summary>
-/// Base interface to be implemented by the text agents
-/// </summary>
-public interface ITextAgent
+﻿namespace Inventai.Core
 {
+
+
     /// <summary>
-    /// Completes <paramref name="pMessage"/> as per the LLM model
+    /// Base interface to be implemented by the text agents
     /// </summary>
-    /// <param name="pMessage"></param>
-    /// <returns></returns>
-    public string CompleteMessage(string pMessage);
+    public interface ITextAgent
+    {
+        /// <summary>
+        /// Completes <paramref name="pMessage"/> as per the LLM model
+        /// </summary>
+        /// <param name="pMessage"></param>
+        /// <returns></returns>
+        string CompleteMessage(string pMessage);
+    }
 }

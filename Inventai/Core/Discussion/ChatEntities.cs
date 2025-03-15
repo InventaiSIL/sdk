@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text.Json;
 
 namespace Inventai.Core.Discussion
@@ -10,50 +11,50 @@ namespace Inventai.Core.Discussion
         /// <summary>
         /// Unique identifier of the entity
         /// </summary>
-        public string Id { get; }
+        string Id { get; }
 
         /// <summary>
         /// Name of the entity
         /// </summary>
-        public string Name { get; }
+        string Name { get; }
     }
 
-    public record class EntityExample : IChatInteractableEntityBase
+    public class EntityExample : IChatInteractableEntityBase
     {
-        public required string Id { get; set; }
-        public required string Name { get; set; }
+        public string Id { get; set; }
+        public string Name { get; set; }
     }
 
     /// <summary>
     /// Entity messsage
     /// </summary>
-    public record class EntityMessage
+    public class EntityMessage
     {
         /// <summary>
         /// The entity sending the message
         /// </summary>
-        public required string EntityId { get; set; }
+        public string EntityId { get; set; }
 
         /// <summary>
         /// The message
         /// </summary>
-        public required string Message { get; set; }
+        public string Message { get; set; }
     }
 
     /// <summary>
     /// Entities discussion
     /// </summary>
-    public record class EntitiesChatResponse
+    public class EntitiesChatResponse
     {
         /// <summary>
         /// List of participants
         /// </summary>
-        public required List<string> Participants { get; set; }
+        public List<string> Participants { get; set; }
 
         /// <summary>
         /// List of messages
         /// </summary>
-        public required List<EntityMessage> EntitiesMessages { get; set; }
+        public List<EntityMessage> EntitiesMessages { get; set; }
 
         
         public virtual string ToJson()
@@ -65,22 +66,22 @@ namespace Inventai.Core.Discussion
     /// <summary>
     /// Request object for generating entities Chat
     /// </summary>
-    public record class EntitiesChatRequest
+    public class EntitiesChatRequest
     {
         /// <summary>
         /// Prompt for which entities are to be generated
         /// </summary>
-        public required string Prompt { get; set; }
+        public string Prompt { get; set; }
 
         /// <summary>
         /// Context for the prompt
         /// </summary>
-        public string? Context { get; set; }
+        public string Context { get; set; }
 
         /// <summary>
         /// Entities to generate the chats for
         /// </summary>
-        public required EntityExample[] Entities { get; set; }
+        public EntityExample[] Entities { get; set; }
 
         /// <summary>
         /// Number of messages to generate
