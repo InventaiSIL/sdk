@@ -9,6 +9,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InventaiTestApp", "..\Inven
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestInventai", "..\TestInventai\TestInventai.csproj", "{A038080F-5543-4628-B3B0-466E8DA2890A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InventaiNovel", "..\InventaiNovel\InventaiNovel.csproj", "{57BE607B-58A7-46E0-B9D2-CBF1A035201A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InventaiNovelTestApp", "..\InventaiNovelTestApp\InventaiNovelTestApp.csproj", "{B4F8B551-0A13-4BC2-809B-BB1B8F85670D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +31,14 @@ Global
 		{A038080F-5543-4628-B3B0-466E8DA2890A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A038080F-5543-4628-B3B0-466E8DA2890A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A038080F-5543-4628-B3B0-466E8DA2890A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{57BE607B-58A7-46E0-B9D2-CBF1A035201A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{57BE607B-58A7-46E0-B9D2-CBF1A035201A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{57BE607B-58A7-46E0-B9D2-CBF1A035201A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{57BE607B-58A7-46E0-B9D2-CBF1A035201A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B4F8B551-0A13-4BC2-809B-BB1B8F85670D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B4F8B551-0A13-4BC2-809B-BB1B8F85670D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B4F8B551-0A13-4BC2-809B-BB1B8F85670D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B4F8B551-0A13-4BC2-809B-BB1B8F85670D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

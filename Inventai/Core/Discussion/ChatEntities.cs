@@ -1,30 +1,9 @@
+using Inventai.Core.Character;
 using System.Collections.Generic;
 using System.Text.Json;
 
 namespace Inventai.Core.Discussion
 {
-    /// <summary>
-    /// Base interface to be implemented by the text agents
-    /// </summary>
-    public interface IChatInteractableEntityBase
-    {
-        /// <summary>
-        /// Unique identifier of the entity
-        /// </summary>
-        string Id { get; }
-
-        /// <summary>
-        /// Name of the entity
-        /// </summary>
-        string Name { get; }
-    }
-
-    public class EntityExample : IChatInteractableEntityBase
-    {
-        public string Id { get; set; }
-        public string Name { get; set; }
-    }
-
     /// <summary>
     /// Entity messsage
     /// </summary>
@@ -81,7 +60,7 @@ namespace Inventai.Core.Discussion
         /// <summary>
         /// Entities to generate the chats for
         /// </summary>
-        public EntityExample[] Entities { get; set; }
+        public Character.Character[] Entities { get; set; }
 
         /// <summary>
         /// Number of messages to generate
