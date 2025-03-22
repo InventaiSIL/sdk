@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
@@ -55,7 +56,7 @@ namespace Inventai.Src.Entities
             return Path.Combine(pathToEntitiesFolder, $"character_{CharId}.json");
         }
 
-        public static Entities? LoadCharacter(int id,string pathToEntitiesFolder)
+        public static Entities LoadCharacter(int id,string pathToEntitiesFolder)
         {
             string filePath = Path.Combine(pathToEntitiesFolder, $"character_{id}.json");
 
