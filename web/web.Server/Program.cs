@@ -81,7 +81,23 @@ app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(novelsPath),
     RequestPath = "/novels",
-    ServeUnknownFileTypes = true
+    ServeUnknownFileTypes = true,
+    OnPrepareResponse = ctx =>
+    {
+        // Allow caching and set proper content type for zip files
+        ctx.Context.Response.Headers.Append("Cache-Control", "public,max-age=31536000");
+        if (ctx.File.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+        {
+            ctx.Context.Response.Headers.Append("Content-Type", "application/zip");
+        }
+    }
+});
+
+// Add endpoint to check file existence
+app.MapGet("/novels/{id}/exists", (string id) =>
+{
+    var zipPath = Path.Combine(novelsPath, id, "game.zip");
+    return Results.Ok(new { exists = File.Exists(zipPath) });
 });
 
 app.UseDefaultFiles();

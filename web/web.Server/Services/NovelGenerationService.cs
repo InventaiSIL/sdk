@@ -64,6 +64,7 @@ namespace web.Server.Services
                                 Directory.CreateDirectory(basePath);
                             }
 
+                            // Save novel files
                             await novelManager.SaveNovel(basePath);
                             await novelManager.ExportToRenpy(basePath);
 
@@ -73,6 +74,32 @@ namespace web.Server.Services
                                 novelFiles.Length, 
                                 basePath,
                                 string.Join(", ", novelFiles));
+
+                            // Create zip file in a temporary location first
+                            var tempZipPath = Path.Combine(Path.GetTempPath(), $"game-{generation.Id}.zip");
+                            if (File.Exists(tempZipPath))
+                            {
+                                File.Delete(tempZipPath);
+                            }
+                            
+                            System.IO.Compression.ZipFile.CreateFromDirectory(basePath, tempZipPath);
+                            _logger.LogInformation("Created temporary zip file at: {TempZipPath}", tempZipPath);
+
+                            // Move the zip file to the final location
+                            var finalZipPath = Path.Combine(basePath, "game.zip");
+                            if (File.Exists(finalZipPath))
+                            {
+                                File.Delete(finalZipPath);
+                            }
+                            
+                            File.Move(tempZipPath, finalZipPath);
+                            _logger.LogInformation("Moved zip file to final location: {FinalZipPath}", finalZipPath);
+
+                            // Verify zip file exists and is accessible
+                            if (!File.Exists(finalZipPath))
+                            {
+                                throw new Exception($"Failed to create zip file at {finalZipPath}");
+                            }
 
                             // Update status to completed
                             generation.Status = "Completed";
