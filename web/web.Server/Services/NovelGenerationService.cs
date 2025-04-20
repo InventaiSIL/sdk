@@ -55,13 +55,24 @@ namespace web.Server.Services
                                 ? Path.Combine(Directory.GetCurrentDirectory(), "novels", generation.Id.ToString())  // For local development
                                 : Path.Combine(homePath, "site", "wwwroot", "novels", generation.Id.ToString());   // For Azure
 
+                            _logger.LogInformation("Saving novel to path: {BasePath}", basePath);
+
                             // Ensure the directory exists
                             if (!Directory.Exists(basePath))
                             {
+                                _logger.LogInformation("Creating directory: {BasePath}", basePath);
                                 Directory.CreateDirectory(basePath);
                             }
+
                             await novelManager.SaveNovel(basePath);
                             await novelManager.ExportToRenpy(basePath);
+
+                            // Verify files were created
+                            var novelFiles = Directory.GetFiles(basePath, "*.*", SearchOption.AllDirectories);
+                            _logger.LogInformation("Created {Count} files in {BasePath}: {Files}", 
+                                novelFiles.Length, 
+                                basePath,
+                                string.Join(", ", novelFiles));
 
                             // Update status to completed
                             generation.Status = "Completed";

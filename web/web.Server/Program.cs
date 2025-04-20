@@ -1,6 +1,7 @@
 using web.Server.Services;
 using Microsoft.EntityFrameworkCore;
 using web.Server.Data;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -64,7 +65,25 @@ else
 }
 
 app.UseHttpsRedirection();
-app.UseStaticFiles();
+
+// Configure static files
+var homePath = Environment.GetEnvironmentVariable("HOME");
+var novelsPath = string.IsNullOrEmpty(homePath)
+    ? Path.Combine(Directory.GetCurrentDirectory(), "novels")  // For local development
+    : Path.Combine(homePath, "site", "wwwroot", "novels");    // For Azure
+
+if (!Directory.Exists(novelsPath))
+{
+    Directory.CreateDirectory(novelsPath);
+}
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(novelsPath),
+    RequestPath = "/novels",
+    ServeUnknownFileTypes = true
+});
+
 app.UseDefaultFiles();
 
 app.UseAuthorization();
