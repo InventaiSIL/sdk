@@ -76,7 +76,10 @@ namespace web.Server.Services
                                 string.Join(", ", novelFiles));
 
                             // Create zip file in a temporary location first
-                            var tempZipPath = Path.Combine(Path.GetTempPath(), $"game-{generation.Id}.zip");
+                            var tempDir = Environment.GetEnvironmentVariable("TEMP") ?? Path.GetTempPath();
+                            var tempZipPath = Path.Combine(tempDir, $"game-{generation.Id}.zip");
+                            _logger.LogInformation("Using temp directory: {TempDir}", tempDir);
+                            
                             if (File.Exists(tempZipPath))
                             {
                                 File.Delete(tempZipPath);
@@ -99,6 +102,12 @@ namespace web.Server.Services
                             if (!File.Exists(finalZipPath))
                             {
                                 throw new Exception($"Failed to create zip file at {finalZipPath}");
+                            }
+
+                            // Clean up temp file if it still exists
+                            if (File.Exists(tempZipPath))
+                            {
+                                File.Delete(tempZipPath);
                             }
 
                             // Update status to completed
