@@ -75,25 +75,42 @@ namespace web.Server.Services
                                 basePath,
                                 string.Join(", ", novelFiles));
 
-                            // Create zip file in a temporary location first
-                            var tempZipPath = Path.Combine(Path.GetTempPath(), $"game-{generation.Id}.zip");
-                            if (File.Exists(tempZipPath))
-                            {
-                                File.Delete(tempZipPath);
-                            }
-                            
-                            System.IO.Compression.ZipFile.CreateFromDirectory(basePath, tempZipPath);
-                            _logger.LogInformation("Created temporary zip file at: {TempZipPath}", tempZipPath);
-
-                            // Move the zip file to the final location
+                            // Create zip file in memory
                             var finalZipPath = Path.Combine(basePath, "game.zip");
+                            _logger.LogInformation("Creating zip file at: {FinalZipPath}", finalZipPath);
+
+                            // Delete existing zip if it exists
                             if (File.Exists(finalZipPath))
                             {
                                 File.Delete(finalZipPath);
                             }
-                            
-                            File.Move(tempZipPath, finalZipPath);
-                            _logger.LogInformation("Moved zip file to final location: {FinalZipPath}", finalZipPath);
+
+                            // Create zip in memory
+                            using (var memoryStream = new MemoryStream())
+                            {
+                                using (var archive = new System.IO.Compression.ZipArchive(memoryStream, System.IO.Compression.ZipArchiveMode.Create, true))
+                                {
+                                    foreach (var file in novelFiles)
+                                    {
+                                        var relativePath = Path.GetRelativePath(basePath, file);
+                                        var entry = archive.CreateEntry(relativePath);
+                                        using (var entryStream = entry.Open())
+                                        using (var fileStream = File.OpenRead(file))
+                                        {
+                                            await fileStream.CopyToAsync(entryStream);
+                                        }
+                                    }
+                                }
+
+                                // Write the memory stream to the final file
+                                memoryStream.Position = 0;
+                                using (var fileStream = File.Create(finalZipPath))
+                                {
+                                    await memoryStream.CopyToAsync(fileStream);
+                                }
+                            }
+
+                            _logger.LogInformation("Successfully created zip file");
 
                             // Verify zip file exists and is accessible
                             if (!File.Exists(finalZipPath))
