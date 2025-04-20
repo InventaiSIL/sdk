@@ -1,5 +1,5 @@
 ﻿using Inventai.TextAgents;
-﻿using Inventai.ImageAgents;
+using Inventai.ImageAgents;
 using Inventai.Discussion;
 
 static void TestOpenai()
@@ -39,7 +39,7 @@ static async Task TestSegmind()
         {
             Prompt = "A group of children playing football",
         });
-        Console.WriteLine(segmindImage.Length);
+        Console.WriteLine(segmindImage);
     }
 }
 
@@ -83,12 +83,12 @@ static void TextDiscussionContextChat()
             Prompt = "Entities chat for a person",
             Context = "You are a person who is trying to be good",
             Entities = [
-                new Inventai.Core.Discussion.EntityExample()
+                new Inventai.Core.Character.Character()
                 {
                     Id = "1",
                     Name = "Person 1"
                 },
-                new Inventai.Core.Discussion.EntityExample()
+                new Inventai.Core.Character.Character()
                 {
                     Id = "2",
                     Name = "Person 2"
@@ -103,14 +103,9 @@ static void TextDiscussionContextChat()
     }
 }
 
-static async Task Main(string[] args)
-{
-    //TestOpenai();
-    //TestLocalLlm();
-    //await TestSegmind();
+//TestOpenai();
+//TestLocalLlm();
+await TestSegmind();
 
-    TestDiscussionContextChoices();
-    TextDiscussionContextChat();
-}
-
-Main(args);
+//TestDiscussionContextChoices();
+//TextDiscussionContextChat();

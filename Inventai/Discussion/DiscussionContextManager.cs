@@ -33,20 +33,27 @@ namespace Inventai.Discussion
             Console.WriteLine("Generating contextual choices...");
 
             var prompt = new StringBuilder();
-            prompt.Append("You have to generate choices for the prompt: ");
-            prompt.Append(pRequest.Prompt);
-            prompt.Append(" with the context: ");
-            prompt.Append(pRequest.Context);
-            prompt.Append(" and the number of choices: ");
-            prompt.Append(pRequest.NumChoices);
-            prompt.Append(".\n");
-            prompt.Append("Respond with only the choices as a list of strings.");
+            prompt.AppendLine("You are a helpful assistant that generates relevant choices based on a given context.");
+            prompt.AppendLine("Task: Generate exactly " + pRequest.NumChoices + " distinct and relevant choices for the following scenario:");
+            prompt.AppendLine("Prompt: " + pRequest.Prompt);
+            prompt.AppendLine("Context: " + pRequest.Context);
+            prompt.AppendLine("\nRequirements:");
+            prompt.AppendLine("1. Each choice must be a single line of text");
+            prompt.AppendLine("2. Choices should be diverse and cover different aspects of the scenario");
+            prompt.AppendLine("3. Each choice should be clear and actionable");
+            prompt.AppendLine("4. Do not include any numbering or bullet points");
+            prompt.AppendLine("\nExample format:");
+            prompt.AppendLine("Choice 1");
+            prompt.AppendLine("Choice 2");
+            prompt.AppendLine("Choice 3");
 
             var responseString = m_TextAgent.CompleteMessage(prompt.ToString());
+            var response = responseString.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                                      .Select(s => s.Trim())
+                                      .Where(s => !string.IsNullOrWhiteSpace(s))
+                                      .ToArray();
 
-            var response = responseString.Split('\n');
-
-            Console.WriteLine(response.Length + " choices generated");
+            Console.WriteLine($"{response.Length} choices generated");
 
             return new ContextualChoicesResponse() { Choices = response };
         }
@@ -56,29 +63,55 @@ namespace Inventai.Discussion
             Console.WriteLine("Generating entities chats...");
 
             var prompt = new StringBuilder();
-            prompt.Append("You have to generate ");
-            prompt.Append(pRequest.NumMessages);
-            prompt.Append(" messages between the entities: ");
-            prompt.Append(pRequest.Entities.Select(e => e.Name).Aggregate((a, b) => a + ", " + b));
-            prompt.Append(" for the prompt: ");
-            prompt.Append(pRequest.Prompt);
-            prompt.Append(" with the context: ");
-            prompt.Append(pRequest.Context);
-            prompt.Append(".\n");
-            prompt.Append("Respond with only the entities chats as JSON that contains the Participants (list of participants) and EntitiesMessages " +
-                "(list of object containing EntityId and a Message.");
+            prompt.AppendLine("You are a helpful assistant that generates realistic conversations between entities.");
+            prompt.AppendLine("Task: Generate a conversation with exactly " + pRequest.NumMessages + " messages between the following entities:");
+            prompt.AppendLine("Entities: " + string.Join(", ", pRequest.Entities.Select(e => e.Name)));
+            prompt.AppendLine("Prompt: " + pRequest.Prompt);
+            prompt.AppendLine("Context: " + pRequest.Context);
+            
+            prompt.AppendLine("\nRequirements:");
+            prompt.AppendLine("1. Generate a valid JSON response with the following structure:");
+            prompt.AppendLine("   {\"Participants\": [\"Entity1\", \"Entity2\"], \"EntitiesMessages\": [{\"EntityId\": \"Entity1\", \"Message\": \"Message text\"}]}");
+            prompt.AppendLine("2. Each message should be natural and relevant to the context");
+            prompt.AppendLine("3. Messages should show a logical progression of the conversation");
+            prompt.AppendLine("4. Each entity should participate in the conversation");
+            prompt.AppendLine("5. Entity IDs must match exactly with the provided entity names");
+            
+            prompt.AppendLine("\nExample format:");
+            prompt.AppendLine("{\"Participants\": [\"Alice\", \"Bob\"], \"EntitiesMessages\": [{\"EntityId\": \"Alice\", \"Message\": \"Hello Bob!\"}, {\"EntityId\": \"Bob\", \"Message\": \"Hi Alice!\"}]}");
 
             var responseString = m_TextAgent.CompleteMessage(prompt.ToString());
 
             try
             {
                 var response = JsonConvert.DeserializeObject<EntitiesChatResponse>(responseString);
+                
+                // Validate the response
+                if (response == null || 
+                    response.Participants == null || 
+                    response.EntitiesMessages == null ||
+                    !response.Participants.Any() ||
+                    !response.EntitiesMessages.Any())
+                {
+                    throw new JsonException("Invalid response structure");
+                }
 
-                return response ?? new EntitiesChatResponse() { Participants = new List<string>(), EntitiesMessages = new List<EntityMessage>() };
+                // Validate that all entity IDs exist in participants
+                var invalidEntityIds = response.EntitiesMessages
+                    .Select(m => m.EntityId)
+                    .Where(id => !response.Participants.Contains(id))
+                    .ToList();
+
+                if (invalidEntityIds.Any())
+                {
+                    throw new JsonException($"Invalid entity IDs found: {string.Join(", ", invalidEntityIds)}");
+                }
+
+                return response;
             }
             catch (JsonException e)
             {
-                Debug.WriteLine(e.Message);
+                Debug.WriteLine($"Error deserializing response: {e.Message}");
                 return new EntitiesChatResponse() { Participants = new List<string>(), EntitiesMessages = new List<EntityMessage>() };
             }
         }

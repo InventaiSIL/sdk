@@ -28,7 +28,7 @@ namespace Inventai.Core
     /// <summary>
     /// Base interface to be implemented by the text agents
     /// </summary>
-    internal interface IImageAgent
+    public interface IImageAgent
     {
         /// <summary>
         /// Generates an image asynchroneously from a text <paramref name="pRequest"/>
@@ -36,5 +36,13 @@ namespace Inventai.Core
         /// <param name="pRequest"></param>
         /// <returns></returns>
         Task<byte[]> GenerateImageAsync(ImageRequest pRequest);
+
+        /// <summary>
+        /// Generates an image for a character asynchroneously from a prompt <paramref name="pPrompt"/> and a context <paramref name="pContext"/>
+        /// </summary>
+        /// <param name="pPrompt"></param>
+        /// <param name="pContext"></param>
+        /// <returns></returns>
+        Task<byte[]> GenerateCharacterImageAsync(string pPrompt, string pContext);
     }
 }
