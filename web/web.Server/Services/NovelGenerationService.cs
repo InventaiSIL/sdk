@@ -50,12 +50,16 @@ namespace web.Server.Services
                             var novelManager = new InventaiNovelManager(textAgent, imageAgent);
                             novelManager.CreateNovel(generation.Request);
 
-                            var basePath = Path.Combine(
-                                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), 
-                                "novels", 
-                                generation.Id.ToString());
-                            
-                            Directory.CreateDirectory(basePath);
+                            var homePath = Environment.GetEnvironmentVariable("HOME");
+                            var basePath = string.IsNullOrEmpty(homePath)
+                                ? Path.Combine(Directory.GetCurrentDirectory(), "novels", generation.Id.ToString())  // For local development
+                                : Path.Combine(homePath, "site", "wwwroot", "novels", generation.Id.ToString());   // For Azure
+
+                            // Ensure the directory exists
+                            if (!Directory.Exists(basePath))
+                            {
+                                Directory.CreateDirectory(basePath);
+                            }
                             await novelManager.SaveNovel(basePath);
                             await novelManager.ExportToRenpy(basePath);
 

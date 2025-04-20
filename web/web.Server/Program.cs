@@ -26,15 +26,13 @@ builder.Services.AddCors(options =>
 // Add database context
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
-    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-    if (string.IsNullOrEmpty(connectionString))
-    {
-        // For Azure deployment, use environment variable
-        connectionString = Environment.GetEnvironmentVariable("SQLCONNSTR_DefaultConnection");
-    }
+    // Get the HOME directory for Azure App Service
+    var homePath = Environment.GetEnvironmentVariable("HOME");
+    var dbPath = string.IsNullOrEmpty(homePath) 
+        ? Path.Combine(Directory.GetCurrentDirectory(), "Data")  // For local development
+        : Path.Combine(homePath, "site", "wwwroot", "Data");    // For Azure
     
     // Ensure the database directory exists
-    var dbPath = Path.Combine(Directory.GetCurrentDirectory(), "Data");
     if (!Directory.Exists(dbPath))
     {
         Directory.CreateDirectory(dbPath);
