@@ -1,6 +1,7 @@
 using web.Server.Services;
 using Microsoft.EntityFrameworkCore;
 using web.Server.Data;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -64,7 +65,41 @@ else
 }
 
 app.UseHttpsRedirection();
-app.UseStaticFiles();
+
+// Configure static files
+var homePath = Environment.GetEnvironmentVariable("HOME");
+var novelsPath = string.IsNullOrEmpty(homePath)
+    ? Path.Combine(Directory.GetCurrentDirectory(), "novels")  // For local development
+    : Path.Combine(homePath, "site", "wwwroot", "novels");    // For Azure
+
+if (!Directory.Exists(novelsPath))
+{
+    Directory.CreateDirectory(novelsPath);
+}
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(novelsPath),
+    RequestPath = "/novels",
+    ServeUnknownFileTypes = true,
+    OnPrepareResponse = ctx =>
+    {
+        // Allow caching and set proper content type for zip files
+        ctx.Context.Response.Headers.Append("Cache-Control", "public,max-age=31536000");
+        if (ctx.File.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+        {
+            ctx.Context.Response.Headers.Append("Content-Type", "application/zip");
+        }
+    }
+});
+
+// Add endpoint to check file existence
+app.MapGet("/novels/{id}/exists", (string id) =>
+{
+    var zipPath = Path.Combine(novelsPath, id, "game.zip");
+    return Results.Ok(new { exists = File.Exists(zipPath) });
+});
+
 app.UseDefaultFiles();
 
 app.UseAuthorization();

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaMagic, FaUserPlus, FaBook, FaInfoCircle, FaLightbulb, FaClipboardList, FaKey, FaSearch } from 'react-icons/fa';
+import { FaMagic, FaUserPlus, FaBook, FaInfoCircle, FaLightbulb, FaClipboardList, FaKey, FaSearch, FaDownload } from 'react-icons/fa';
 import { GiSpellBook } from 'react-icons/gi';
 
 interface CharacterCreationRequest {
@@ -221,12 +221,32 @@ const NovelGenerator: React.FC = () => {
               </div>
 
               {generationInfo.status === 'Completed' && (
-                <button
-                  onClick={() => navigate(`/novel/${generationInfo.id}`)}
-                  className="w-full mt-4 inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all"
-                >
-                  View Your Novel
-                </button>
+                <div className="space-y-4">
+                  <button
+                    onClick={async () => {
+                      try {
+                        const response = await fetch(`https://inventai-final-awfabwdge5d5g8bk.canadacentral-01.azurewebsites.net/novels/${generationInfo.id}/game.zip`);
+                        if (!response.ok) throw new Error('Download failed');
+                        
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `novel-${generationInfo.id}.zip`;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                      } catch (error) {
+                        console.error('Download error:', error);
+                      }
+                    }}
+                    className="w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all"
+                  >
+                    <FaDownload className="mr-2" />
+                    Download Game Files
+                  </button>
+                </div>
               )}
             </div>
           </div>

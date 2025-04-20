@@ -55,13 +55,51 @@ namespace web.Server.Services
                                 ? Path.Combine(Directory.GetCurrentDirectory(), "novels", generation.Id.ToString())  // For local development
                                 : Path.Combine(homePath, "site", "wwwroot", "novels", generation.Id.ToString());   // For Azure
 
+                            _logger.LogInformation("Saving novel to path: {BasePath}", basePath);
+
                             // Ensure the directory exists
                             if (!Directory.Exists(basePath))
                             {
+                                _logger.LogInformation("Creating directory: {BasePath}", basePath);
                                 Directory.CreateDirectory(basePath);
                             }
+
+                            // Save novel files
                             await novelManager.SaveNovel(basePath);
                             await novelManager.ExportToRenpy(basePath);
+
+                            // Verify files were created
+                            var novelFiles = Directory.GetFiles(basePath, "*.*", SearchOption.AllDirectories);
+                            _logger.LogInformation("Created {Count} files in {BasePath}: {Files}", 
+                                novelFiles.Length, 
+                                basePath,
+                                string.Join(", ", novelFiles));
+
+                            // Create zip file in a temporary location first
+                            var tempZipPath = Path.Combine(Path.GetTempPath(), $"game-{generation.Id}.zip");
+                            if (File.Exists(tempZipPath))
+                            {
+                                File.Delete(tempZipPath);
+                            }
+                            
+                            System.IO.Compression.ZipFile.CreateFromDirectory(basePath, tempZipPath);
+                            _logger.LogInformation("Created temporary zip file at: {TempZipPath}", tempZipPath);
+
+                            // Move the zip file to the final location
+                            var finalZipPath = Path.Combine(basePath, "game.zip");
+                            if (File.Exists(finalZipPath))
+                            {
+                                File.Delete(finalZipPath);
+                            }
+                            
+                            File.Move(tempZipPath, finalZipPath);
+                            _logger.LogInformation("Moved zip file to final location: {FinalZipPath}", finalZipPath);
+
+                            // Verify zip file exists and is accessible
+                            if (!File.Exists(finalZipPath))
+                            {
+                                throw new Exception($"Failed to create zip file at {finalZipPath}");
+                            }
 
                             // Update status to completed
                             generation.Status = "Completed";
