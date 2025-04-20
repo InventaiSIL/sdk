@@ -1,17 +1,13 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+﻿<Project Sdk="Microsoft.NET.Sdk;Microsoft.NET.Sdk.Publish">
   <PropertyGroup>
     <TargetFramework>net481</TargetFramework>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="OpenAI" Version="2.1.0" />
     <PackageReference Include="System.Collections" Version="4.3.0" />
   </ItemGroup>
-
   <ItemGroup>
     <Reference Include="System.Net.Http" />
   </ItemGroup>
-
 </Project>
