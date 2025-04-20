@@ -35,34 +35,71 @@ namespace Inventai.Character
         public List<Core.Character.Character> GenerateCharacters(CharacterCreationRequest pRequest)
         {
             Console.WriteLine("Generating characters for the prompt: " + pRequest.Prompt + " with context: " + pRequest.Context);
-            // Generate the characters
             var characters = new List<Core.Character.Character>();
             var characterNames = new List<string>();
 
-            var prompt = "Create " + pRequest.NumCharacters + " characters for the prompt: " + pRequest.Prompt + " with context: " + pRequest.Context
-                + " .\nEach character should have a name and some metadata describing the character."
-                + " . Provide a list of the characters as JSON that contains the Name and MetaData (only the list without the key 'characters')";
-            var responseString = m_TextAgent.CompleteMessage(prompt);
-            var characterBases = JsonConvert.DeserializeObject<List<Core.Character.Character>>(responseString);
+            var prompt = $@"Create {pRequest.NumCharacters} unique and distinct characters based on the following requirements:
 
-            for (int i = 0; i < pRequest.NumCharacters; i++)
+                Prompt: {pRequest.Prompt}
+                Context: {pRequest.Context}
+
+                For each character, provide the following information in a structured format:
+                - Name: A unique and memorable name
+                - MetaData: A detailed description including:
+                * Physical appearance
+                * Personality traits
+                * Background/history
+                * Special abilities or skills
+                * Motivations and goals
+
+                Format the response as a JSON array of objects with exactly these properties:
+                [
+                {{
+                    ""Name"": ""Character Name"",
+                    ""MetaData"": ""Detailed character description""
+                }}
+                ]
+
+                Ensure the response is valid JSON and contains exactly {pRequest.NumCharacters} characters.";
+
+            try
             {
-                // Generate the character
-                var character = new Core.Character.Character
+                var responseString = m_TextAgent.CompleteMessage(prompt);
+                var characterBases = JsonConvert.DeserializeObject<List<Core.Character.Character>>(responseString);
+
+                if (characterBases == null || characterBases.Count != pRequest.NumCharacters)
                 {
-                    Id = Guid.NewGuid().ToString(),
-                    Name = characterBases[i].Name,
-                    Image = m_ImageAgent.GenerateCharacterImageAsync(
-                        "Create an image for the character named " 
-                        + characterBases[i].Name 
-                        + " with the general context: " + pRequest.Prompt
-                        + " and having the metadata: " + characterBases[i].MetaData, pRequest.Context).Result,
-                    MetaData = characterBases[i].MetaData
-                };
-                // Add the character to the list
-                characters.Add(character);
+                    throw new Exception($"Failed to generate the requested number of characters. Expected {pRequest.NumCharacters}, got {characterBases?.Count ?? 0}");
+                }
+
+                for (int i = 0; i < pRequest.NumCharacters; i++)
+                {
+                    var character = new Core.Character.Character
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        Name = characterBases[i].Name,
+                        Image = m_ImageAgent.GenerateCharacterImageAsync(
+                            $"Create a detailed, high-quality character portrait for {characterBases[i].Name}. " +
+                            $"Context: {pRequest.Prompt}. " +
+                            $"Character details: {characterBases[i].MetaData}", 
+                            pRequest.Context).Result,
+                        MetaData = characterBases[i].MetaData
+                    };
+                    characters.Add(character);
+                }
             }
-            Console.WriteLine("Generated characters: " + string.Join(", ", characters.Select(c => c.Name)));
+            catch (JsonException ex)
+            {
+                Console.WriteLine($"Error parsing character response: {ex.Message}");
+                throw new Exception("Failed to parse character generation response. The response was not in the expected JSON format.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error generating characters: {ex.Message}");
+                throw;
+            }
+
+            Console.WriteLine("Successfully generated characters: " + string.Join(", ", characters.Select(c => c.Name)));
             return characters;
         }
     }

@@ -47,8 +47,8 @@ class Program
 
             NovelCreationRequest novelCreationRequest = new() { 
                 CharacterCreationRequest = new()
-                { Context = "Medieval ages", Prompt = "History of a mage hunting a dragon", NumCharacters = 1 },
-                NumScenes = 1,
+                { Context = "Medieval ages", Prompt = "History of a mage hunting a dragon", NumCharacters = 2 },
+                NumScenes = 3,
                 Prompt = "History of a mage hunting a dragon",
                 Context = "Medieval ages"
             };
