@@ -4,7 +4,6 @@ import { GiSpellBook } from 'react-icons/gi';
 
 interface NovelGeneration {
   id: string;
-  generationId: string;
   status: string;
   createdAt: string;
   completedAt: string | null;
@@ -43,7 +42,7 @@ const NovelFinder: React.FC = () => {
     if (!novel?.outputPath) return;
 
     try {
-      const response = await fetch(`https://inventai-final-awfabwdge5d5g8bk.canadacentral-01.azurewebsites.net/Novel/${novel.generationId}/download`);
+      const response = await fetch(`https://inventai-final-awfabwdge5d5g8bk.canadacentral-01.azurewebsites.net/Novel/${novel.id}/download`);
       if (!response.ok) {
         throw new Error('Failed to download novel');
       }
@@ -52,7 +51,7 @@ const NovelFinder: React.FC = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `novel-${novel.generationId}.zip`;
+      a.download = `novel-${novel.id}.zip`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
