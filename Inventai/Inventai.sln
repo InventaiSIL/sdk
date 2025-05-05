@@ -13,10 +13,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InventaiNovel", "..\Inventa
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InventaiNovelTestApp", "..\InventaiNovelTestApp\InventaiNovelTestApp.csproj", "{B4F8B551-0A13-4BC2-809B-BB1B8F85670D}"
 EndProject
-Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "web.client", "..\web\web.client\web.client.esproj", "{C782F591-6D2A-03B0-1923-A0153EC2C931}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "web.Server", "..\web\web.Server\web.Server.csproj", "{8C9D9B99-AEE3-44D2-A5EF-2AAACC5AC692}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,16 +39,6 @@ Global
 		{B4F8B551-0A13-4BC2-809B-BB1B8F85670D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B4F8B551-0A13-4BC2-809B-BB1B8F85670D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B4F8B551-0A13-4BC2-809B-BB1B8F85670D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C782F591-6D2A-03B0-1923-A0153EC2C931}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C782F591-6D2A-03B0-1923-A0153EC2C931}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C782F591-6D2A-03B0-1923-A0153EC2C931}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
-		{C782F591-6D2A-03B0-1923-A0153EC2C931}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C782F591-6D2A-03B0-1923-A0153EC2C931}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C782F591-6D2A-03B0-1923-A0153EC2C931}.Release|Any CPU.Deploy.0 = Release|Any CPU
-		{8C9D9B99-AEE3-44D2-A5EF-2AAACC5AC692}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8C9D9B99-AEE3-44D2-A5EF-2AAACC5AC692}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8C9D9B99-AEE3-44D2-A5EF-2AAACC5AC692}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8C9D9B99-AEE3-44D2-A5EF-2AAACC5AC692}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
