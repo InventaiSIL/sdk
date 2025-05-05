@@ -13,6 +13,13 @@ namespace InventaiNovel
         private readonly string m_GeneralContext;
         private readonly StreamWriter m_Writer;
 
+        /// <summary>
+        /// Initializes a new instance of the RenpyExporter class
+        /// </summary>
+        /// <param name="scenes">List of scenes to export</param>
+        /// <param name="characters">List of characters in the novel</param>
+        /// <param name="generalContext">General context of the novel</param>
+        /// <param name="writer">StreamWriter to write the Ren'Py script to</param>
         public RenpyExporter(List<Scene> scenes, List<Character> characters, string generalContext, StreamWriter writer)
         {
             m_Scenes = scenes;
@@ -41,6 +48,9 @@ namespace InventaiNovel
             }
         }
 
+        /// <summary>
+        /// Writes character definitions to the Ren'Py script
+        /// </summary>
         private async Task WriteCharacterDefinitions()
         {
             await m_Writer.WriteLineAsync("# Character definitions");
@@ -54,6 +64,9 @@ namespace InventaiNovel
             await m_Writer.WriteLineAsync();
         }
 
+        /// <summary>
+        /// Writes image definitions for characters and scenes to the Ren'Py script
+        /// </summary>
         private async Task WriteImageDefinitions()
         {
             await m_Writer.WriteLineAsync("# Image definitions");
@@ -69,6 +82,9 @@ namespace InventaiNovel
             await m_Writer.WriteLineAsync();
         }
 
+        /// <summary>
+        /// Writes the main story content to the Ren'Py script
+        /// </summary>
         private async Task WriteStory()
         {
             await m_Writer.WriteLineAsync("# The story starts here");
@@ -85,6 +101,10 @@ namespace InventaiNovel
             }
         }
 
+        /// <summary>
+        /// Writes a single scene to the Ren'Py script
+        /// </summary>
+        /// <param name="sceneIndex">Index of the scene in the scenes list</param>
         private async Task WriteScene(int sceneIndex)
         {
             var scene = m_Scenes[sceneIndex];
@@ -119,6 +139,10 @@ namespace InventaiNovel
             await WriteChoices(sceneIndex, scene, sceneLabel);
         }
 
+        /// <summary>
+        /// Writes the narrative text of a scene to the Ren'Py script
+        /// </summary>
+        /// <param name="scene">The scene containing the narrative to write</param>
         private async Task WriteNarrative(Scene scene)
         {
             var paragraphs = scene.Narrative.Split(new[] { "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries)
@@ -138,6 +162,12 @@ namespace InventaiNovel
             await m_Writer.WriteLineAsync();
         }
 
+        /// <summary>
+        /// Writes the choices menu for a scene to the Ren'Py script
+        /// </summary>
+        /// <param name="sceneIndex">Index of the current scene in the scenes list</param>
+        /// <param name="scene">The scene containing the choices to write</param>
+        /// <param name="currentSceneLabel">The label of the current scene</param>
         private async Task WriteChoices(int sceneIndex, Scene scene, string currentSceneLabel)
         {
             if (scene.Options != null && scene.Options.Any())
@@ -145,7 +175,15 @@ namespace InventaiNovel
                 await m_Writer.WriteLineAsync("    menu:");
                 for (int i = 0; i < scene.Options.Count; i++)
                 {
-                    var option = scene.Options[i];
+                    // Clean up the option text
+                    var option = scene.Options[i]
+                        .Replace("\n", " ")  // Replace newlines with spaces
+                        .Replace("\r", "")   // Remove carriage returns
+                        .Trim();             // Remove leading/trailing whitespace
+
+                    // Ensure the option is properly escaped
+                    option = option.Replace("\"", "\\\"");
+
                     await m_Writer.WriteLineAsync($"        \"{option}\":");
 
                     // Find the next scene based on this choice
@@ -192,6 +230,9 @@ namespace InventaiNovel
             await m_Writer.WriteLineAsync();
         }
 
+        /// <summary>
+        /// Writes the ending labels to the Ren'Py script
+        /// </summary>
         private async Task WriteEndings()
         {
             int numEndings = m_Scenes.Count > 0 && m_Scenes.Last().Options?.Count > 0
