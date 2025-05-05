@@ -9,25 +9,30 @@ using System.Text;
 namespace Inventai.Discussion
 {
     /// <summary>
-    /// Inventai's discussion context
+    /// Manages the context and generation of discussions and choices in the Inventai system
     /// </summary>
     public class DiscussionContextManager : IDiscussionContext
     {
         /// <summary>
-        /// The text agent to use
+        /// The text agent used for generating responses
         /// </summary>
         private readonly Core.ITextAgent m_TextAgent;
 
         /// <summary>
-        /// Ctor
+        /// Initializes a new instance of the DiscussionContextManager class
         /// </summary>
-        /// <param name="pTextAgent"></param>
+        /// <param name="pTextAgent">The text agent to use for generating responses</param>
         public DiscussionContextManager(Core.ITextAgent pTextAgent)
         {
             m_TextAgent = pTextAgent;
             Console.WriteLine("Discussion context created");
         }
 
+        /// <summary>
+        /// Generates contextual choices based on the provided request
+        /// </summary>
+        /// <param name="pRequest">The request containing the prompt, context, and number of choices to generate</param>
+        /// <returns>A response containing the generated choices</returns>
         public ContextualChoicesResponse GenerateContextualChoices(ContextualChoicesRequest pRequest)
         {
             Console.WriteLine("Generating contextual choices...");
@@ -58,6 +63,15 @@ namespace Inventai.Discussion
             return new ContextualChoicesResponse() { Choices = response };
         }
 
+        /// <summary>
+        /// Generates a chat conversation between entities based on the provided request
+        /// </summary>
+        /// <param name="pRequest">The request containing the entities, prompt, context, and number of messages to generate</param>
+        /// <returns>A response containing the generated conversation with participants and messages</returns>
+        /// <remarks>
+        /// The method validates the response structure and ensures all entity IDs are valid.
+        /// If the response is invalid, it returns an empty response with empty lists.
+        /// </remarks>
         public EntitiesChatResponse GenerateEntitiesChat(EntitiesChatRequest pRequest)
         {
             Console.WriteLine("Generating entities chats...");

@@ -51,6 +51,12 @@ namespace Inventai.ImageAgents
             Console.WriteLine($"Stable Diffusion Image agent created with endpoint {pEndpoint}");
         }
 
+        /// <summary>
+        /// Generates an image for a character based on a prompt and context
+        /// </summary>
+        /// <param name="pPrompt">The prompt for the image generation</param>
+        /// <param name="pContext">The context for the image generation</param>
+        /// <returns>A byte array representing the generated image</returns>
         public Task<byte[]> GenerateCharacterImageAsync(string pPrompt, string pContext)
         {
             return GenerateImageAsync(new ImageRequest()
@@ -59,6 +65,11 @@ namespace Inventai.ImageAgents
             });
         }
 
+        /// <summary>
+        /// Generates an image based on a prompt and negative prompt
+        /// </summary>
+        /// <param name="pRequest">The request for the image generation</param>
+        /// <returns>A byte array representing the generated image</returns>
         public async Task<byte[]> GenerateImageAsync(ImageRequest pRequest)
         {
             try
