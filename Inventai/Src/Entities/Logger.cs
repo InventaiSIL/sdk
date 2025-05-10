@@ -6,33 +6,33 @@ using System;
 
 namespace Inventai
 {
-    public static class Logger
-    {
-        public static void WriteLine(string message)
+        public static class Logger
         {
+                public static void WriteLine(string message)
+                {
 #if UNITY_EDITOR || UNITY_STANDALONE
                         Debug.Log(message);
 #else
-            Console.WriteLine(message);
+                        Console.WriteLine(message);
 #endif
-        }
+                }
 
-        public static void WriteWarning(string message)
-        {
+                public static void WriteWarning(string message)
+                {
 #if UNITY_EDITOR || UNITY_STANDALONE
                         Debug.LogWarning(message);
 #else
-            Console.WriteLine($"WARNING: {message}");
+                        Console.WriteLine($"WARNING: {message}");
 #endif
-        }
+                }
 
-        public static void WriteError(string message)
-        {
+                public static void WriteError(string message)
+                {
 #if UNITY_EDITOR || UNITY_STANDALONE
                         Debug.LogError(message);
 #else
-            Console.WriteLine($"ERROR: {message}");
+                        Console.WriteLine($"ERROR: {message}");
 #endif
+                }
         }
-    }
 }
