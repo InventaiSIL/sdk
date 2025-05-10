@@ -1,1 +1,1 @@
-# sdk
+# InventAI SDK
