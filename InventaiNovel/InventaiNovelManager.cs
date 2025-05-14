@@ -176,8 +176,22 @@ namespace InventaiNovel
                                   $"Characters: {string.Join(", ", pCharacters.Select(c => c.Name ?? "Unknown"))}\n" +
                                   $"Story context: {sceneContext}\n" +
                                   $"This is {(depth < m_Scenes.Count ? "not" : "")} the final scene.\n" +
-                                  $"Each choice should lead to a distinctly different story progression.";
-                
+                                  $"Each choice should lead to a distinctly different story progression." + 
+                                  $"The choices should be in the format:\n" +
+                                    $"1. Choice 1\n" +
+                                    $"2. Choice 2\n" +
+                                    $"3. Choice 3\n" +
+                                    $"4. Choice 4\n" +
+                                    $"Ensure the choices are clear, engaging and does not exceed one sentence each.\n" +
+                                    $"Format the response as a JSON array of strings:\n" +
+                                    $"[\n" +
+                                    $"  \"Choice 1\",\n" +
+                                    $"  \"Choice 2\",\n" +
+                                    $"  \"Choice 3\",\n" +
+                                    $"  \"Choice 4\"\n" +
+                                    $"]\n" +
+                                    $"Ensure the response is valid JSON and contains exactly 2-4 choices.";
+
                 var optionsString = m_TextAgent.CompleteMessage(optionsPrompt);
                 List<string> options = (optionsString ?? string.Empty)
                     .Split(new[] { "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries)
@@ -197,8 +211,11 @@ namespace InventaiNovel
                                     $"Characters: {string.Join(", ", pCharacters.Select(c => c.Name ?? "Unknown"))}\n" +
                                     $"Story context: {sceneContext}\n" +
                                     $"Available choices: {string.Join(", ", options)}\n" +
-                                    $"Make the narrative reflect the consequences of previous choices and lead naturally to the available options.";
-                
+                                    $"Make the narrative reflect the consequences of previous choices and lead naturally to the available options." +
+                                    $"The narrative should be engaging and not exceed 3-5 short sentences.\n" +
+                                    $"Format the response as a single string without any additional formatting or JSON." +
+                                    $"Ensure the response is valid and contains a coherent narrative.";
+
                 var narrative = m_TextAgent.CompleteMessage(narrativePrompt);
                 if (string.IsNullOrWhiteSpace(narrative))
                 {
@@ -209,8 +226,16 @@ namespace InventaiNovel
                 try
                 {
                     // Extract key elements from the narrative for the image
-                    var narrativeSummary = narrative?.Split('.')
-                        .FirstOrDefault()?.Trim() ?? "A scene from the story";
+                    var narrativeSummary = m_TextAgent.CompleteMessage($"Summarize the following narrative in a few key elements for an image prompt:\n{narrative}" +
+                                    $"\n\nKey elements: " +
+                                    $"1. Characters: {string.Join(", ", pCharacters.Select(c => c.Name ?? "Unknown"))}\n" +
+                                    $"2. Scene description: {narrative} " +
+                                    $"3. Mood/Theme: {string.Join(", ", options)}\n" +
+                                    $"4. Setting: {sceneContext}" +
+                                    $"\n\nUse these elements to create a concise image prompt." +
+                                    $"Ensure the response is valid and contains a coherent summary that should not exceed 200 characters." +
+                                    $"Format the response as a single string without any additional formatting or JSON." +
+                                    $"Ensure the response is valid and contains a coherent summary.");
 
                     // Create a concise, focused image prompt
                     var imagePrompt = $"A detailed illustration of a scene where {string.Join(" and ", pCharacters.Select(c => c.Name ?? "Unknown"))} " +
@@ -225,7 +250,9 @@ namespace InventaiNovel
                     sceneBackgroundImage = m_ImageAgent.GenerateImageAsync(new ImageRequest()
                     {
                         Prompt = imagePrompt,
-                        NegativePrompt = "text, watermark, signature, blurry, distorted"
+                        NegativePrompt = "text, watermark, signature, blurry, distorted",
+                        Width = 1024,
+                        Height = 512,
                     }).Result;
                 }
                 catch (Exception ex)
@@ -258,6 +285,74 @@ namespace InventaiNovel
             }
         }
 
+        /// <summary>
+        /// Changes the background image of a scene
+        /// </summary>
+        /// <param name="scene"></param>
+        /// <param name="newImage"></param>
+        /// <returns></returns>
+        public bool ChangeSceneBackgroundImage(Scene scene, byte[] newImage)
+        {
+            if (scene == null || newImage == null || newImage.Length == 0)
+            {
+                return false;
+            }
+            scene.BackgroundImage = newImage;
+            return true;
+        }
+
+        /// <summary>
+        /// Changes the image of a character
+        /// </summary>
+        /// <param name="character"></param>
+        /// <param name="newImage"></param>
+        /// <returns></returns>
+        public bool ChangeCharacterImage(Character character, byte[] newImage)
+        {
+            if (character == null || newImage == null || newImage.Length == 0)
+            {
+                return false;
+            }
+            character.Image = newImage;
+            return true;
+        }
+
+        /// <summary>
+        /// Changes the narrative of a scene
+        /// </summary>
+        /// <param name="scene"></param>
+        /// <param name="newNarrative"></param>
+        /// <returns></returns>
+        public bool ChangeSceneNarrative(Scene scene, string newNarrative)
+        {
+            if (scene == null || string.IsNullOrWhiteSpace(newNarrative))
+            {
+                return false;
+            }
+            scene.Narrative = newNarrative;
+            return true;
+        }
+
+        /// <summary>
+        /// Changes the branching choices of a scene
+        /// </summary>
+        /// <param name="scene"></param>
+        /// <param name="newChoices"></param>
+        /// <returns></returns>
+        public bool ChangeBranchingChoices(Scene scene, List<string> newChoices)
+        {
+            if (scene == null || newChoices == null || !newChoices.Any())
+            {
+                return false;
+            }
+            scene.Options = newChoices;
+            return true;
+        }
+
+        /// <summary>
+        /// Returns the characters of the novel
+        /// </summary>
+        /// <returns></returns>
         public List<Scene> GetScenes()
         {
             return m_Scenes;
