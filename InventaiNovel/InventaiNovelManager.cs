@@ -350,6 +350,41 @@ namespace InventaiNovel
         }
 
         /// <summary>
+        /// Loads a novel from a file
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        public Novel LoadNovel(string path)
+        {
+            try
+            {
+                Console.WriteLine($"Loading novel from: {path}");
+                var json = File.ReadAllText(path);
+                var novel = JsonSerializer.Deserialize<Novel>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    ReferenceHandler = ReferenceHandler.Preserve
+                });
+
+                if (novel == null)
+                {
+                    throw new Exception("Failed to deserialize the novel");
+                }
+                m_Characters = novel.Characters;
+                m_Scenes = novel.Scenes;
+
+                Console.WriteLine("Novel loaded successfully!");
+                return novel;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading novel: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                throw;
+            }
+        }
+
+        /// <summary>
         /// Returns the characters of the novel
         /// </summary>
         /// <returns></returns>
