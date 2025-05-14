@@ -4,7 +4,7 @@ using System.Text;
 namespace InventaiNovel
 {
     /// <summary>
-    /// Handles exporting novel content to Ren'Py format
+    /// Handles exporting novel content to Ren'Py format with improved narrative display
     /// </summary>
     public class RenpyExporter
     {
@@ -22,19 +22,20 @@ namespace InventaiNovel
         /// <param name="writer">StreamWriter to write the Ren'Py script to</param>
         public RenpyExporter(List<Scene> scenes, List<Character> characters, string generalContext, StreamWriter writer)
         {
-            m_Scenes = scenes;
-            m_Characters = characters;
+            m_Scenes = scenes ?? throw new ArgumentNullException(nameof(scenes));
+            m_Characters = characters ?? throw new ArgumentNullException(nameof(characters));
             m_GeneralContext = generalContext;
-            m_Writer = writer;
+            m_Writer = writer ?? throw new ArgumentNullException(nameof(writer));
         }
 
         /// <summary>
-        /// Export the novel to Ren'Py format
+        /// Export the novel to Ren'Py format with improved styling
         /// </summary>
         public async Task ExportToRenpy()
         {
             try
             {
+                await WriteInitialConfiguration();
                 await WriteCharacterDefinitions();
                 await WriteImageDefinitions();
                 await WriteStory();
@@ -49,18 +50,64 @@ namespace InventaiNovel
         }
 
         /// <summary>
+        /// Writes initial configuration for the Ren'Py game
+        /// </summary>
+        private async Task WriteInitialConfiguration()
+        {
+            await m_Writer.WriteLineAsync("# Game configuration");
+            await m_Writer.WriteLineAsync("define config.adv_nvl_transition = dissolve");
+            await m_Writer.WriteLineAsync("define config.nvl_adv_transition = dissolve");
+            await m_Writer.WriteLineAsync("define config.window_title = \"Visual Novel\"");
+            await m_Writer.WriteLineAsync();
+
+            // Style configuration for narrative text box
+            await m_Writer.WriteLineAsync("init python:");
+            await m_Writer.WriteLineAsync("    style.nvl_window = Style(style.default)");
+            await m_Writer.WriteLineAsync("    style.nvl_window.background = Solid(\"#000000B0\")  # Semi-transparent black");
+            await m_Writer.WriteLineAsync("    style.nvl_window.xpadding = 50");
+            await m_Writer.WriteLineAsync("    style.nvl_window.ypadding = 30");
+            await m_Writer.WriteLineAsync("    style.nvl_window.xmargin = 50");
+            await m_Writer.WriteLineAsync("    style.nvl_window.ymargin = 50");
+            await m_Writer.WriteLineAsync("    style.nvl_window.yalign = 1.0  # Align to bottom of screen");
+            await m_Writer.WriteLineAsync();
+        }
+
+        /// <summary>
         /// Writes character definitions to the Ren'Py script
         /// </summary>
         private async Task WriteCharacterDefinitions()
         {
             await m_Writer.WriteLineAsync("# Character definitions");
             await m_Writer.WriteLineAsync("init python:");
-            await m_Writer.WriteLineAsync("    narrator = Character(None, kind=nvl)");
+            await m_Writer.WriteLineAsync("    narrator = Character(None, kind=nvl, what_style=\"nvl_text\")");
+
+            // Style for narrative text
+            await m_Writer.WriteLineAsync("    style.nvl_text = Style(style.nvl_dialogue)");
+            await m_Writer.WriteLineAsync("    style.nvl_text.size = 24");
+            await m_Writer.WriteLineAsync("    style.nvl_text.line_spacing = 5");
+            await m_Writer.WriteLineAsync("    style.nvl_text.color = \"#FFFFFF\"");
+            await m_Writer.WriteLineAsync("    style.nvl_text.font = \"fonts/Roboto-Regular.ttf\"");
+            await m_Writer.WriteLineAsync();
+
             foreach (var character in m_Characters)
             {
                 var safeName = character.Name.ToLower().Replace(" ", "_");
-                await m_Writer.WriteLineAsync($"    {safeName} = Character(\"{character.Name}\", kind=adv)");
+                await m_Writer.WriteLineAsync($"    {safeName} = Character(\"{character.Name}\", ");
+                await m_Writer.WriteLineAsync($"        kind=adv, ");
+                await m_Writer.WriteLineAsync($"        who_style=\"character_name\", ");
+                await m_Writer.WriteLineAsync($"        what_style=\"character_dialogue\")");
             }
+
+            // Character name and dialogue styles
+            await m_Writer.WriteLineAsync("    style.character_name = Style(style.say_dialogue)");
+            await m_Writer.WriteLineAsync("    style.character_name.size = 28");
+            await m_Writer.WriteLineAsync("    style.character_name.bold = True");
+            await m_Writer.WriteLineAsync("    style.character_name.color = \"#FFD700\"  # Gold color");
+            await m_Writer.WriteLineAsync();
+
+            await m_Writer.WriteLineAsync("    style.character_dialogue = Style(style.say_dialogue)");
+            await m_Writer.WriteLineAsync("    style.character_dialogue.size = 24");
+            await m_Writer.WriteLineAsync("    style.character_dialogue.color = \"#FFFFFF\"");
             await m_Writer.WriteLineAsync();
         }
 
@@ -70,14 +117,19 @@ namespace InventaiNovel
         private async Task WriteImageDefinitions()
         {
             await m_Writer.WriteLineAsync("# Image definitions");
+            await m_Writer.WriteLineAsync("init python:");
+            await m_Writer.WriteLineAsync("    # Character images");
             foreach (var character in m_Characters)
             {
                 var safeName = character.Name.ToLower().Replace(" ", "_");
-                await m_Writer.WriteLineAsync($"image {safeName} = \"{Path.Combine("images", "characters", $"{safeName}.jpg").Replace("\\", "/")}\"");
+                await m_Writer.WriteLineAsync($"    renpy.image(\"{safeName}\", \"{Path.Combine("images", "characters", $"{safeName}.png").Replace("\\", "/")}\")");
             }
+
+            await m_Writer.WriteLineAsync();
+            await m_Writer.WriteLineAsync("    # Scene backgrounds");
             foreach (var scene in m_Scenes)
             {
-                await m_Writer.WriteLineAsync($"image scene{scene.Id} = \"{Path.Combine("images", "scenes", $"scene{scene.Id}.jpg").Replace("\\", "/")}\"");
+                await m_Writer.WriteLineAsync($"    renpy.image(\"bg scene{scene.Id}\", \"{Path.Combine("images", "backgrounds", $"scene{scene.Id}.jpg").Replace("\\", "/")}\")");
             }
             await m_Writer.WriteLineAsync();
         }
@@ -88,11 +140,10 @@ namespace InventaiNovel
         private async Task WriteStory()
         {
             await m_Writer.WriteLineAsync("# The story starts here");
-            await m_Writer.WriteLineAsync("init python:");
-            await m_Writer.WriteLineAsync("    previous_choices = {}");
-            await m_Writer.WriteLineAsync();
             await m_Writer.WriteLineAsync("label start:");
             await m_Writer.WriteLineAsync("    $ previous_choices = {}");
+            await m_Writer.WriteLineAsync("    stop music fadeout 1.0");
+            await m_Writer.WriteLineAsync("    play music \"audio/background_music.mp3\" fadein 2.0 loop");
             await m_Writer.WriteLineAsync();
 
             foreach (var scene in m_Scenes)
@@ -102,36 +153,25 @@ namespace InventaiNovel
         }
 
         /// <summary>
-        /// Writes a single scene to the Ren'Py script
+        /// Writes a single scene to the Ren'Py script with improved transitions
         /// </summary>
         /// <param name="sceneIndex">Index of the scene in the scenes list</param>
         private async Task WriteScene(int sceneIndex)
         {
             var scene = m_Scenes[sceneIndex];
-            
-            // Generate a unique label based on the scene ID and previous choices
-            string choicePath = string.Join("_", scene.PreviousChoices
-                .OrderBy(kv => kv.Key)
-                .Select(kv => $"c{kv.Key}_{kv.Value}"));
-            
-            string sceneLabel = string.IsNullOrEmpty(choicePath) 
-                ? $"scene_{scene.Id}" 
-                : $"scene_{scene.Id}_{choicePath}";
 
-            await m_Writer.WriteLineAsync($"    # Scene {scene.Id}");
+            string sceneLabel = GenerateSceneLabel(scene);
+            await m_Writer.WriteLineAsync($"    # Scene {scene.Id} - {sceneLabel}");
             await m_Writer.WriteLineAsync($"label {sceneLabel}:");
 
-            // Add conditional text based on previous choices if any exist
+            // Handle previous choices context
             if (scene.PreviousChoices.Any())
             {
-                await m_Writer.WriteLineAsync("    # Check previous choices context");
-                foreach (var choice in scene.PreviousChoices)
-                {
-                    await m_Writer.WriteLineAsync($"    $ choice_{choice.Key} = previous_choices.get({choice.Key}, -1)");
-                }
+                await WriteChoiceContext(scene);
             }
 
-            await m_Writer.WriteLineAsync($"    scene scene{scene.Id}");
+            // Scene setup with transition
+            await m_Writer.WriteLineAsync($"    scene bg scene{scene.Id}");
             await m_Writer.WriteLineAsync("    with fade");
             await m_Writer.WriteLineAsync();
 
@@ -140,88 +180,93 @@ namespace InventaiNovel
         }
 
         /// <summary>
-        /// Writes the narrative text of a scene to the Ren'Py script
+        /// Generates a unique label for the scene based on its ID and previous choices
         /// </summary>
-        /// <param name="scene">The scene containing the narrative to write</param>
-        private async Task WriteNarrative(Scene scene)
+        private string GenerateSceneLabel(Scene scene)
         {
-            var paragraphs = scene.Narrative.Split(new[] { "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries)
-                .Select(para => para.Trim())
-                .Where(para => !string.IsNullOrWhiteSpace(para));
+            string choicePath = string.Join("_", scene.PreviousChoices
+                .OrderBy(kv => kv.Key)
+                .Select(kv => $"c{kv.Key}_{kv.Value}"));
 
-            foreach (var para in paragraphs)
+            return string.IsNullOrEmpty(choicePath)
+                ? $"scene_{scene.Id}"
+                : $"scene_{scene.Id}_{choicePath}";
+        }
+
+        /// <summary>
+        /// Writes the choice context variables for a scene
+        /// </summary>
+        private async Task WriteChoiceContext(Scene scene)
+        {
+            await m_Writer.WriteLineAsync("    # Previous choices context");
+            foreach (var choice in scene.PreviousChoices)
             {
-                var escapedPara = para
-                    .Replace("\"", "\\\"")  // Escape double quotes
-                    .Replace("\n", " ")     // Replace newlines with spaces
-                    .Replace("\r", "");     // Remove carriage returns
-
-                await m_Writer.WriteLineAsync($"    narrator \"{escapedPara}\"");
-                await m_Writer.WriteLineAsync("    nvl clear");
+                await m_Writer.WriteLineAsync($"    $ choice_{choice.Key} = previous_choices.get({choice.Key}, -1)");
             }
             await m_Writer.WriteLineAsync();
         }
 
         /// <summary>
-        /// Writes the choices menu for a scene to the Ren'Py script
+        /// Writes the narrative text of a scene with improved formatting
         /// </summary>
-        /// <param name="sceneIndex">Index of the current scene in the scenes list</param>
-        /// <param name="scene">The scene containing the choices to write</param>
-        /// <param name="currentSceneLabel">The label of the current scene</param>
+        private async Task WriteNarrative(Scene scene)
+        {
+            if (string.IsNullOrWhiteSpace(scene.Narrative))
+                return;
+
+            var paragraphs = scene.Narrative.Split(new[] { "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(para => para.Trim())
+                .Where(para => !string.IsNullOrWhiteSpace(para));
+
+            await m_Writer.WriteLineAsync("    # Narrative text");
+            foreach (var para in paragraphs)
+            {
+                var escapedPara = EscapeRenpyText(para);
+                await m_Writer.WriteLineAsync($"    narrator \"{escapedPara}\"");
+
+                // Add slight pause between paragraphs
+                if (paragraphs.Count() > 1)
+                {
+                    await m_Writer.WriteLineAsync("    pause 0.5");
+                }
+            }
+            await m_Writer.WriteLineAsync("    nvl clear");
+            await m_Writer.WriteLineAsync();
+        }
+
+        /// <summary>
+        /// Escapes text for Ren'Py script
+        /// </summary>
+        private string EscapeRenpyText(string text)
+        {
+            return text
+                .Replace("\"", "\\\"")  // Escape double quotes
+                .Replace("\n", " ")     // Replace newlines with spaces
+                .Replace("\r", "")      // Remove carriage returns
+                .Replace("[", "[[")      // Escape square brackets
+                .Replace("]", "]]");
+        }
+
+        /// <summary>
+        /// Writes the choices menu for a scene with improved formatting
+        /// </summary>
         private async Task WriteChoices(int sceneIndex, Scene scene, string currentSceneLabel)
         {
-            if (scene.Options != null && scene.Options.Any())
+            if (scene.Options?.Any() ?? false)
             {
+                await m_Writer.WriteLineAsync("    # Player choices");
                 await m_Writer.WriteLineAsync("    menu:");
-                for (int i = 0; i < scene.Options.Count; i++)
+
+                foreach (var option in scene.Options.Select((text, index) => new { text, index }))
                 {
-                    // Clean up the option text
-                    var option = scene.Options[i]
-                        .Replace("\n", " ")  // Replace newlines with spaces
-                        .Replace("\r", "")   // Remove carriage returns
-                        .Trim();             // Remove leading/trailing whitespace
-
-                    // Ensure the option is properly escaped
-                    option = option.Replace("\"", "\\\"");
-
-                    await m_Writer.WriteLineAsync($"        \"{option}\":");
-
-                    // Find the next scene based on this choice
-                    var nextScene = m_Scenes.FirstOrDefault(s => 
-                        s.PreviousChoices.ContainsKey(scene.Id) && 
-                        s.PreviousChoices[scene.Id] == i);
-
-                    if (nextScene != null)
-                    {
-                        // Generate the next scene's label
-                        var nextChoicePath = string.Join("_", nextScene.PreviousChoices
-                            .OrderBy(kv => kv.Key)
-                            .Select(kv => $"c{kv.Key}_{kv.Value}"));
-                        
-                        var nextSceneLabel = string.IsNullOrEmpty(nextChoicePath) 
-                            ? $"scene_{nextScene.Id}" 
-                            : $"scene_{nextScene.Id}_{nextChoicePath}";
-
-                        await m_Writer.WriteLineAsync($"            $ previous_choices[{scene.Id}] = {i}");
-                        await m_Writer.WriteLineAsync($"            jump {nextSceneLabel}");
-                    }
-                    else if (sceneIndex == m_Scenes.Count - 1)
-                    {
-                        await m_Writer.WriteLineAsync($"            jump end_{i + 1}");
-                    }
-                    else
-                    {
-                        // If no specific next scene is found, create a default next scene label
-                        var defaultNextSceneLabel = $"scene_{scene.Id + 1}_default";
-                        await m_Writer.WriteLineAsync($"            jump {defaultNextSceneLabel}");
-                    }
+                    var escapedOption = EscapeRenpyText(option.text);
+                    await m_Writer.WriteLineAsync($"        \"{escapedOption}\":");
+                    await WriteChoiceAction(sceneIndex, scene, option.index);
                 }
-                await m_Writer.WriteLineAsync();
             }
             else if (sceneIndex < m_Scenes.Count - 1)
             {
-                var defaultNextSceneLabel = $"scene_{scene.Id + 1}_default";
-                await m_Writer.WriteLineAsync($"    jump {defaultNextSceneLabel}");
+                await m_Writer.WriteLineAsync($"    jump scene_{scene.Id + 1}_default");
             }
             else
             {
@@ -231,7 +276,40 @@ namespace InventaiNovel
         }
 
         /// <summary>
-        /// Writes the ending labels to the Ren'Py script
+        /// Writes the action for a specific choice
+        /// </summary>
+        private async Task WriteChoiceAction(int sceneIndex, Scene scene, int choiceIndex)
+        {
+            var nextScene = FindNextScene(scene, choiceIndex);
+
+            if (nextScene != null)
+            {
+                string nextSceneLabel = GenerateSceneLabel(nextScene);
+                await m_Writer.WriteLineAsync($"            $ previous_choices[{scene.Id}] = {choiceIndex}");
+                await m_Writer.WriteLineAsync($"            jump {nextSceneLabel}");
+            }
+            else if (sceneIndex == m_Scenes.Count - 1)
+            {
+                await m_Writer.WriteLineAsync($"            jump end_{choiceIndex + 1}");
+            }
+            else
+            {
+                await m_Writer.WriteLineAsync($"            jump scene_{scene.Id + 1}_default");
+            }
+        }
+
+        /// <summary>
+        /// Finds the next scene based on current scene and choice
+        /// </summary>
+        private Scene FindNextScene(Scene currentScene, int choiceIndex)
+        {
+            return m_Scenes.FirstOrDefault(s =>
+                s.PreviousChoices.ContainsKey(currentScene.Id) &&
+                s.PreviousChoices[currentScene.Id] == choiceIndex);
+        }
+
+        /// <summary>
+        /// Writes the ending labels with improved formatting
         /// </summary>
         private async Task WriteEndings()
         {
@@ -239,13 +317,17 @@ namespace InventaiNovel
                 ? m_Scenes.Last().Options.Count
                 : 1;
 
+            await m_Writer.WriteLineAsync("# Game endings");
             for (int i = 0; i < numEndings; i++)
             {
                 await m_Writer.WriteLineAsync($"label end_{i + 1}:");
-                await m_Writer.WriteLineAsync($"    narrator \"You reached the end of your journey through choice {i + 1}.\"");
+                await m_Writer.WriteLineAsync($"    scene black with fade");
+                await m_Writer.WriteLineAsync($"    play music \"audio/ending_{i + 1}.mp3\" fadein 2.0");
+                await m_Writer.WriteLineAsync($"    narrator \"You reached ending #{i + 1} of your journey.\"");
+                await m_Writer.WriteLineAsync($"    narrator \"Thank you for playing!\"");
                 await m_Writer.WriteLineAsync("    return");
                 await m_Writer.WriteLineAsync();
             }
         }
     }
-} 
+}
