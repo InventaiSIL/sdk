@@ -47,6 +47,7 @@ namespace Inventai.ImageAgents
             // Add X-API-Key to request headers
             _httpClient.DefaultRequestHeaders.Clear();
             _httpClient.DefaultRequestHeaders.Add("X-API-Key", pApiKey);
+            _httpClient.Timeout = TimeSpan.FromMinutes(5);
             _endpoint = pEndpoint;
             Console.WriteLine($"Stable Diffusion Image agent created with endpoint {pEndpoint}");
         }

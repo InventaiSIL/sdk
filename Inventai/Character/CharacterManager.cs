@@ -78,11 +78,6 @@ namespace Inventai.Character
                     {
                         Id = Guid.NewGuid().ToString(),
                         Name = characterBases[i].Name,
-                        Image = m_ImageAgent.GenerateCharacterImageAsync(
-                            $"Create a detailed, high-quality character portrait for {characterBases[i].Name}. " +
-                            $"Context: {pRequest.Prompt}. " +
-                            $"Character details: {characterBases[i].MetaData}", 
-                            pRequest.Context).Result,
                         MetaData = characterBases[i].MetaData
                     };
                     characters.Add(character);

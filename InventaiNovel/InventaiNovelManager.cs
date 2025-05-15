@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace InventaiNovel
 {
@@ -45,6 +46,11 @@ namespace InventaiNovel
         private readonly IImageAgent m_ImageAgent;
 
         /// <summary>
+        /// Max Scenes Depth
+        /// </summary>
+        private int m_MaxDepth;
+
+        /// <summary>
         /// Ctor
         /// </summary>
         public InventaiNovelManager(ITextAgent pTextAgent, IImageAgent pImageAgent)
@@ -62,15 +68,17 @@ namespace InventaiNovel
         /// Create a novel
         /// </summary>
         /// <param name="pRequest"></param>
-        public void CreateNovel(NovelCreationRequest pRequest)
+        public async Task CreateNovel(NovelCreationRequest pRequest)
         {
             m_Characters = m_CharacterManager.GenerateCharacters(pRequest.CharacterCreationRequest);
             m_GeneralContext = pRequest.Prompt + " with context: " + pRequest.Context;
+            m_MaxDepth = pRequest.NumScenes;
             
             Console.WriteLine($"Creating novel with {pRequest.NumScenes} scenes and characters: {string.Join(", ", m_Characters.Select(c => c.Name))}");
             
             // Create scenes in a branching structure
             CreateBranchingScenes(pRequest.NumScenes);
+            await GenerateScenesBackgrounds();
         }
 
         /// <summary>
@@ -85,7 +93,7 @@ namespace InventaiNovel
             // For each level (depth) in the story
             for (int depth = 2; depth <= totalScenes; depth++)
             {
-                var currentLevelScenes = m_Scenes.Where(s => s.Id == depth - 1).ToList();
+                var currentLevelScenes = m_Scenes.Where(s => s.Depth == depth - 1).ToList();
                 
                 foreach (var currentScene in currentLevelScenes)
                 {
@@ -157,11 +165,7 @@ namespace InventaiNovel
                             choice.Value >= 0 && 
                             choice.Value < previousScene.Options.Count)
                         {
-                            contextBuilder.AppendLine($"In scene {choice.Key}, the choice was: {previousScene.Options[choice.Value]}");
-                            if (!string.IsNullOrWhiteSpace(previousScene.Narrative))
-                            {
-                                contextBuilder.AppendLine($"This led to: {previousScene.Narrative}");
-                            }
+                            contextBuilder.AppendLine($"In the previous scene, the choice was: {previousScene.Options[choice.Value]}");
                         }
                     }
                 }
@@ -217,7 +221,7 @@ namespace InventaiNovel
                     narrative = "The story continues...";
                 }
 
-                byte[] sceneBackgroundImage = null;
+                var imagePrompt = "";
                 try
                 {
                     // Extract key elements from the narrative for the image
@@ -233,7 +237,7 @@ namespace InventaiNovel
                                     $"Ensure the response is valid and contains a coherent summary.");
 
                     // Create a concise, focused image prompt
-                    var imagePrompt = $"A detailed illustration of a scene where {string.Join(" and ", pCharacters.Select(c => c.Name ?? "Unknown"))} " +
+                    imagePrompt = $"A detailed illustration of a scene where {string.Join(" and ", pCharacters.Select(c => c.Name ?? "Unknown"))} " +
                                     $"are in a scene. {narrativeSummary}";
 
                     // Ensure the prompt isn't too long
@@ -241,14 +245,6 @@ namespace InventaiNovel
                     {
                         imagePrompt = imagePrompt.Substring(0, 200) + "...";
                     }
-
-                    sceneBackgroundImage = m_ImageAgent.GenerateImageAsync(new ImageRequest()
-                    {
-                        Prompt = imagePrompt,
-                        NegativePrompt = "text, watermark, signature, blurry, distorted",
-                        Width = 1024,
-                        Height = 728,
-                    }).Result;
                 }
                 catch (Exception ex)
                 {
@@ -258,9 +254,11 @@ namespace InventaiNovel
 
             var scene = new Scene
             {
-                    Id = depth,
+                    Id = Scene.SceneIdCounter++,
+                    Depth = depth,
                     Characters = new List<Character>(pCharacters),  // Create a new list to avoid reference issues
-                    BackgroundImage = sceneBackgroundImage,
+                    BackgroundImage = [],
+                    BgImagePrompt = imagePrompt,
                     MetaData = pCharacters.Select(c => c.MetaData ?? "No metadata").ToList(),
                     Narrative = narrative,
                     Options = options,
@@ -281,67 +279,29 @@ namespace InventaiNovel
         }
 
         /// <summary>
-        /// Changes the background image of a scene
+        /// Generates scenes backgrounds
         /// </summary>
-        /// <param name="scene"></param>
-        /// <param name="newImage"></param>
         /// <returns></returns>
-        public bool ChangeSceneBackgroundImage(Scene scene, byte[] newImage)
+        private async Task GenerateScenesBackgrounds()
         {
-            if (scene == null || newImage == null || newImage.Length == 0)
+            List<Task<byte[]>> imageGenerationsTasks = [];
+            m_Scenes.ForEach(scene =>
             {
-                return false;
-            }
-            scene.BackgroundImage = newImage;
-            return true;
-        }
+                imageGenerationsTasks.Add(m_ImageAgent.GenerateImageAsync(new ImageRequest()
+                {
+                    Prompt = scene.BgImagePrompt,
+                    NegativePrompt = "text, watermark, signature, blurry, distorted",
+                    Width = 1024,
+                    Height = 728,
+                }));
+            });
 
-        /// <summary>
-        /// Changes the image of a character
-        /// </summary>
-        /// <param name="character"></param>
-        /// <param name="newImage"></param>
-        /// <returns></returns>
-        public bool ChangeCharacterImage(Character character, byte[] newImage)
-        {
-            if (character == null || newImage == null || newImage.Length == 0)
-            {
-                return false;
-            }
-            character.Image = newImage;
-            return true;
-        }
+            byte[][] images = await Task.WhenAll(imageGenerationsTasks);
 
-        /// <summary>
-        /// Changes the narrative of a scene
-        /// </summary>
-        /// <param name="scene"></param>
-        /// <param name="newNarrative"></param>
-        /// <returns></returns>
-        public bool ChangeSceneNarrative(Scene scene, string newNarrative)
-        {
-            if (scene == null || string.IsNullOrWhiteSpace(newNarrative))
+            for (int i = 0; i < m_Scenes.Count; i++)
             {
-                return false;
+                m_Scenes[i].BackgroundImage = images[i];
             }
-            scene.Narrative = newNarrative;
-            return true;
-        }
-
-        /// <summary>
-        /// Changes the branching choices of a scene
-        /// </summary>
-        /// <param name="scene"></param>
-        /// <param name="newChoices"></param>
-        /// <returns></returns>
-        public bool ChangeBranchingChoices(Scene scene, List<string> newChoices)
-        {
-            if (scene == null || newChoices == null || !newChoices.Any())
-            {
-                return false;
-            }
-            scene.Options = newChoices;
-            return true;
         }
 
         /// <summary>
@@ -403,9 +363,6 @@ namespace InventaiNovel
                 Directory.CreateDirectory(novelDir);
                 Console.WriteLine($"Created main novel directory: {novelDir}");
 
-                // Save characters
-                await SaveCharacters(novelDir);
-
                 // Save scenes
                 await SaveScenes(novelDir);
 
@@ -419,31 +376,6 @@ namespace InventaiNovel
                 Console.WriteLine($"Error saving novel: {ex.Message}");
                 Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 throw;
-            }
-        }
-
-        private async Task SaveCharacters(string novelDir)
-        {
-            var charactersDir = Path.Combine(novelDir, "characters");
-            Directory.CreateDirectory(charactersDir);
-            Console.WriteLine($"Created characters directory: {charactersDir}");
-
-            foreach (var character in m_Characters)
-            {
-                try
-                {
-                    var characterImagePath = Path.Combine(charactersDir, $"{character.Name}.jpg");
-                    await File.WriteAllBytesAsync(characterImagePath, character.Image);
-                    Console.WriteLine($"Saved character image: {characterImagePath}");
-                    
-                    // Update character image path
-                    character.Image = Encoding.UTF8.GetBytes($"characters/{character.Name}.jpg");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error saving character {character.Name}: {ex.Message}");
-                    throw;
-                }
             }
         }
 
@@ -520,7 +452,6 @@ namespace InventaiNovel
                     {
                         c.Name,
                         c.MetaData,
-                        ImagePath = Encoding.UTF8.GetString(c.Image)
                     }).ToList(),
                     Scenes = m_Scenes.Select(s => new
                     {
@@ -639,14 +570,6 @@ namespace InventaiNovel
                 // Copy character images
                 var charactersDir = Path.Combine(imagesDir, "characters");
                 Directory.CreateDirectory(charactersDir);
-                foreach (var character in m_Characters)
-                {
-                    var safeName = character.Name.ToLower().Replace(" ", "_");
-                    var sourcePath = Path.Combine(pBasePath, "novel", "characters", $"{character.Name}.jpg");
-                    var destPath = Path.Combine(charactersDir, $"{safeName}.jpg");
-                    File.Copy(sourcePath, destPath, true);
-                    Console.WriteLine($"Copied character image: {character.Name} -> {safeName}.jpg");
-                }
 
                 // Copy scene images
                 var scenesDir = Path.Combine(imagesDir, "scenes");
@@ -663,7 +586,7 @@ namespace InventaiNovel
                 var scriptPath = Path.Combine(gameDir, "script.rpy");
                 using (var writer = new StreamWriter(scriptPath))
                 {
-                    var exporter = new RenpyExporter(m_Scenes, m_Characters, m_GeneralContext, writer);
+                    var exporter = new RenpyExporter(m_Scenes, m_Characters, m_GeneralContext, m_MaxDepth, writer);
                     await exporter.ExportToRenpy();
                 }
 

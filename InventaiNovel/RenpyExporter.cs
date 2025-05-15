@@ -1,5 +1,6 @@
 using Inventai.Core.Character;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace InventaiNovel
 {
@@ -12,6 +13,7 @@ namespace InventaiNovel
         private readonly List<Character> m_Characters;
         private readonly string m_GeneralContext;
         private readonly StreamWriter m_Writer;
+        private readonly int m_MaxDepth;
 
         /// <summary>
         /// Initializes a new instance of the RenpyExporter class
@@ -20,12 +22,13 @@ namespace InventaiNovel
         /// <param name="characters">List of characters in the novel</param>
         /// <param name="generalContext">General context of the novel</param>
         /// <param name="writer">StreamWriter to write the Ren'Py script to</param>
-        public RenpyExporter(List<Scene> scenes, List<Character> characters, string generalContext, StreamWriter writer)
+        public RenpyExporter(List<Scene> scenes, List<Character> characters, string generalContext, int maxDepth, StreamWriter writer)
         {
             m_Scenes = scenes ?? throw new ArgumentNullException(nameof(scenes));
             m_Characters = characters ?? throw new ArgumentNullException(nameof(characters));
             m_GeneralContext = generalContext;
             m_Writer = writer ?? throw new ArgumentNullException(nameof(writer));
+            m_MaxDepth = maxDepth;
         }
 
         /// <summary>
@@ -86,7 +89,7 @@ namespace InventaiNovel
 
             // Style for narrative text
             await m_Writer.WriteLineAsync("    style.nvl_text = Style(style.nvl_dialogue)");
-            await m_Writer.WriteLineAsync("    style.nvl_text.size = 24");
+            await m_Writer.WriteLineAsync("    style.nvl_text.size = 16");
             await m_Writer.WriteLineAsync("    style.nvl_text.line_spacing = 5");
             await m_Writer.WriteLineAsync("    style.nvl_text.color = \"#FFFFFF\"");
             await m_Writer.WriteLineAsync("    style.nvl_text.font = \"fonts/Inter.ttf\"");
@@ -214,7 +217,7 @@ namespace InventaiNovel
         }
 
         /// <summary>
-        /// Writes the narrative text of a scene with improved formatting
+        /// Writes the narrative text of a scene with improved formatting and tokenized output
         /// </summary>
         private async Task WriteNarrative(Scene scene)
         {
@@ -223,20 +226,28 @@ namespace InventaiNovel
 
             var paragraphs = scene.Narrative.Split(new[] { "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries)
                 .Select(para => para.Trim())
-                .Where(para => !string.IsNullOrWhiteSpace(para));
+                .Where(para => !string.IsNullOrWhiteSpace(para))
+                .ToList(); // Force materialization to avoid deferred execution issues
 
             await m_Writer.WriteLineAsync("    # Narrative text");
+
             foreach (var para in paragraphs)
             {
-                var escapedPara = EscapeRenpyText(para);
-                await m_Writer.WriteLineAsync($"    narrator \"{escapedPara}\"");
+                var tokens = Regex.Split(para, @"(?<=[\.!?])\s+")
+                    .Select(token => token.Trim())
+                    .Where(token => !string.IsNullOrWhiteSpace(token));
 
-                // Add slight pause between paragraphs
-                if (paragraphs.Count() > 1)
+                foreach (var token in tokens)
                 {
-                    await m_Writer.WriteLineAsync("    pause 0.5");
+                    var escapedToken = EscapeRenpyText(token);
+                    await m_Writer.WriteLineAsync($"    narrator \"{escapedToken}\"");
+                    await m_Writer.WriteLineAsync("    pause 0.3");
+                    await m_Writer.WriteLineAsync("    nvl clear");
                 }
+
+                await m_Writer.WriteLineAsync("    pause 0.5");
             }
+
             await m_Writer.WriteLineAsync("    nvl clear");
             await m_Writer.WriteLineAsync();
         }
@@ -271,7 +282,7 @@ namespace InventaiNovel
                     await WriteChoiceAction(sceneIndex, scene, option.index);
                 }
             }
-            else if (sceneIndex < m_Scenes.Count - 1)
+            else if (scene.Depth < m_MaxDepth)
             {
                 await m_Writer.WriteLineAsync($"    jump end_{sceneIndex + 2}");
             }
@@ -295,13 +306,13 @@ namespace InventaiNovel
                 await m_Writer.WriteLineAsync($"            $ previous_choices[{scene.Id}] = {choiceIndex}");
                 await m_Writer.WriteLineAsync($"            jump {nextSceneLabel}");
             }
-            else if (sceneIndex == m_Scenes.Count - 1)
+            else if (scene.Depth == m_MaxDepth)
             {
                 await m_Writer.WriteLineAsync($"            jump end_{choiceIndex + 1}");
             }
             else
             {
-                await m_Writer.WriteLineAsync($"            jump end_1");
+                await m_Writer.WriteLineAsync($"            jump end_{choiceIndex + 1}");
             }
         }
 

@@ -22,6 +22,16 @@ namespace InventaiNovel
         public required string Narrative { get; set; }
 
         /// <summary>
+        /// Depth of the scene
+        /// </summary>
+        public int Depth { get; set; }
+
+        /// <summary>
+        /// Scene Id Counter
+        /// </summary>
+        public static int SceneIdCounter { get; set; } = 0;
+
+        /// <summary>
         /// Available choices in this scene
         /// </summary>
         public required List<string> Options { get; set; }
@@ -48,6 +58,11 @@ namespace InventaiNovel
         /// Scene-specific context based on previous choices
         /// </summary>
         public string SceneContext { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Prompt to generate the background image
+        /// </summary>
+        public string BgImagePrompt { get; set; }
 
         /// <summary>
         /// Next scene IDs for each choice

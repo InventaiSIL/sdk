@@ -26,7 +26,6 @@ namespace Inventai.Core.Character
     {
         public string Id { get; set; }
         public string Name { get; set; }
-        public byte[] Image { get; set; }
         public string MetaData { get; set; }
     }
 
