@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Linq;
+using System.Reflection;
 
 namespace InventaiNovel
 {
@@ -182,15 +183,7 @@ namespace InventaiNovel
                                     $"2. Choice 2\n" +
                                     $"3. Choice 3\n" +
                                     $"4. Choice 4\n" +
-                                    $"Ensure the choices are clear, engaging and does not exceed one sentence each.\n" +
-                                    $"Format the response as a JSON array of strings:\n" +
-                                    $"[\n" +
-                                    $"  \"Choice 1\",\n" +
-                                    $"  \"Choice 2\",\n" +
-                                    $"  \"Choice 3\",\n" +
-                                    $"  \"Choice 4\"\n" +
-                                    $"]\n" +
-                                    $"Ensure the response is valid JSON and contains exactly 2-4 choices.";
+                                    $"Ensure the choices are clear, engaging and does not exceed one sentence each.\n";
 
                 var optionsString = m_TextAgent.CompleteMessage(optionsPrompt);
                 List<string> options = (optionsString ?? string.Empty)
@@ -214,7 +207,9 @@ namespace InventaiNovel
                                     $"Make the narrative reflect the consequences of previous choices and lead naturally to the available options." +
                                     $"The narrative should be engaging and not exceed 3-5 short sentences.\n" +
                                     $"Format the response as a single string without any additional formatting or JSON." +
-                                    $"Ensure the response is valid and contains a coherent narrative.";
+                                    $"Ensure the response is valid and contains a coherent narrative." +
+                                    $"The narrative should not contain the choices themselves." +
+                                    $"The narrative should be split into sentences and not exceed 200 characters.";
 
                 var narrative = m_TextAgent.CompleteMessage(narrativePrompt);
                 if (string.IsNullOrWhiteSpace(narrative))
@@ -252,7 +247,7 @@ namespace InventaiNovel
                         Prompt = imagePrompt,
                         NegativePrompt = "text, watermark, signature, blurry, distorted",
                         Width = 1024,
-                        Height = 512,
+                        Height = 728,
                     }).Result;
                 }
                 catch (Exception ex)
@@ -558,6 +553,55 @@ namespace InventaiNovel
             }
         }
 
+        #region Assets 
+        private async Task CopyAudios(string pBasePath)
+        {
+            // var inventaiNovelResourcesDir is the current directory of this before the build
+            var inventaiNovelAudioDir = Path.Combine(
+                Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty,
+                "Resources", "audio");
+            var audioFiles = Directory.GetFiles(inventaiNovelAudioDir, "*.*", SearchOption.AllDirectories)
+                .Where(file => file.EndsWith(".mp3") || file.EndsWith(".wav"))
+                .ToList();
+
+            if (!audioFiles.Any())
+            {
+                Console.WriteLine("No audio files found to copy.");
+                return;
+            }
+            foreach (var file in audioFiles)
+            {
+                var fileName = Path.GetFileName(file);
+                var destPath = Path.Combine(pBasePath, fileName);
+                File.Copy(file, destPath);
+                Console.WriteLine($"Copied audio file: {fileName}");
+            }
+        }
+
+        private async Task CopyFonts(string pBasePath)
+        {
+            // var inventaiNovelResourcesDir is the current directory of this before the build
+            var inventaiNovelFontsDir = Path.Combine(
+                Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty,
+                "Resources", "fonts");
+            var fontFiles = Directory.GetFiles(inventaiNovelFontsDir, "*.*", SearchOption.AllDirectories)
+                .Where(file => file.EndsWith(".ttf") || file.EndsWith(".otf"))
+                .ToList();
+            if (!fontFiles.Any())
+            {
+                Console.WriteLine("No font files found to copy.");
+                return;
+            }
+            foreach (var file in fontFiles)
+            {
+                var fileName = Path.GetFileName(file);
+                var destPath = Path.Combine(pBasePath, fileName);
+                File.Copy(file, destPath);
+                Console.WriteLine($"Copied font file: {fileName}");
+            }
+        }
+        #endregion
+
         /// <summary>
         /// Exports the novel to Ren'Py format
         /// </summary>
@@ -580,6 +624,17 @@ namespace InventaiNovel
                 var imagesDir = Path.Combine(gameDir, "images");
                 Directory.CreateDirectory(imagesDir);
                 Console.WriteLine($"Created images directory: {imagesDir}");
+
+                // Copy audio files
+                var audioDir = Path.Combine(gameDir, "audio");
+                Directory.CreateDirectory(audioDir);
+                await CopyAudios(audioDir);
+                Console.WriteLine($"Created audio directory: {audioDir}");
+                // Copy font files
+                var fontsDir = Path.Combine(gameDir, "fonts");
+                Directory.CreateDirectory(fontsDir);
+                await CopyFonts(fontsDir);
+                Console.WriteLine($"Created fonts directory: {fontsDir}");
 
                 // Copy character images
                 var charactersDir = Path.Combine(imagesDir, "characters");

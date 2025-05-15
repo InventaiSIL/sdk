@@ -67,8 +67,11 @@ namespace InventaiNovel
             await m_Writer.WriteLineAsync("    style.nvl_window.xpadding = 50");
             await m_Writer.WriteLineAsync("    style.nvl_window.ypadding = 30");
             await m_Writer.WriteLineAsync("    style.nvl_window.xmargin = 50");
-            await m_Writer.WriteLineAsync("    style.nvl_window.ymargin = 50");
-            await m_Writer.WriteLineAsync("    style.nvl_window.yalign = 1.0  # Align to bottom of screen");
+            await m_Writer.WriteLineAsync("    style.nvl_window.bottom_margin = 50");  // Changed from ymargin to bottom_margin
+            await m_Writer.WriteLineAsync("    style.nvl_window.top_padding = 0");  // Added to remove top padding
+            await m_Writer.WriteLineAsync("    style.nvl_window.ypos = 0.8");  // Position the window lower on screen
+            await m_Writer.WriteLineAsync("    style.nvl_window.yfill = False");  // Don't fill the whole height
+            await m_Writer.WriteLineAsync("    style.nvl_window.yanchor = 1.0");  // Anchor to bottom
             await m_Writer.WriteLineAsync();
         }
 
@@ -86,7 +89,11 @@ namespace InventaiNovel
             await m_Writer.WriteLineAsync("    style.nvl_text.size = 24");
             await m_Writer.WriteLineAsync("    style.nvl_text.line_spacing = 5");
             await m_Writer.WriteLineAsync("    style.nvl_text.color = \"#FFFFFF\"");
-            await m_Writer.WriteLineAsync("    style.nvl_text.font = \"fonts/Roboto-Regular.ttf\"");
+            await m_Writer.WriteLineAsync("    style.nvl_text.font = \"fonts/Inter.ttf\"");
+            await m_Writer.WriteLineAsync("    style.nvl_text.xalign = 0.5");  // Center text horizontally
+            await m_Writer.WriteLineAsync("    style.nvl_text.text_align = 0.5");  // Center text alignment
+            await m_Writer.WriteLineAsync("    style.nvl_window.xfill = True");  // Fill available width
+            await m_Writer.WriteLineAsync("    style.nvl_window.xmaximum = 1200");  // Set max width
             await m_Writer.WriteLineAsync();
 
             foreach (var character in m_Characters)
@@ -129,7 +136,7 @@ namespace InventaiNovel
             await m_Writer.WriteLineAsync("    # Scene backgrounds");
             foreach (var scene in m_Scenes)
             {
-                await m_Writer.WriteLineAsync($"    renpy.image(\"bg scene{scene.Id}\", \"{Path.Combine("images", "backgrounds", $"scene{scene.Id}.jpg").Replace("\\", "/")}\")");
+                await m_Writer.WriteLineAsync($"    renpy.image(\"bg scene{scene.Id}\", \"{Path.Combine("images", "scenes", $"scene{scene.Id}.jpg").Replace("\\", "/")}\")");
             }
             await m_Writer.WriteLineAsync();
         }
@@ -266,7 +273,7 @@ namespace InventaiNovel
             }
             else if (sceneIndex < m_Scenes.Count - 1)
             {
-                await m_Writer.WriteLineAsync($"    jump scene_{scene.Id + 1}_default");
+                await m_Writer.WriteLineAsync($"    jump end_{sceneIndex + 2}");
             }
             else
             {
@@ -294,7 +301,7 @@ namespace InventaiNovel
             }
             else
             {
-                await m_Writer.WriteLineAsync($"            jump scene_{scene.Id + 1}_default");
+                await m_Writer.WriteLineAsync($"            jump end_1");
             }
         }
 
@@ -322,7 +329,6 @@ namespace InventaiNovel
             {
                 await m_Writer.WriteLineAsync($"label end_{i + 1}:");
                 await m_Writer.WriteLineAsync($"    scene black with fade");
-                await m_Writer.WriteLineAsync($"    play music \"audio/ending_{i + 1}.mp3\" fadein 2.0");
                 await m_Writer.WriteLineAsync($"    narrator \"You reached ending #{i + 1} of your journey.\"");
                 await m_Writer.WriteLineAsync($"    narrator \"Thank you for playing!\"");
                 await m_Writer.WriteLineAsync("    return");
