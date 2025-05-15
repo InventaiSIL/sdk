@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
+using System.Collections.Generic;
+
 namespace Inventai.ImageAgents;
 
 /// <summary>
@@ -66,4 +68,6 @@ public class ImageAgentHunyuan3D
         Console.WriteLine("✅ Hunyuan3D-2 API Response: 3D model generated successfully.");
         return await response.Content.ReadAsByteArrayAsync();
     }
+
+    
 }
