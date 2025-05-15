@@ -340,11 +340,12 @@ namespace InventaiNovel
             {
                 await m_Writer.WriteLineAsync($"label end_{i + 1}:");
                 await m_Writer.WriteLineAsync($"    scene black with fade");
-                await m_Writer.WriteLineAsync($"    narrator \"You reached ending #{i + 1} of your journey.\"");
+                await m_Writer.WriteLineAsync($"    narrator \"You reached the ending of your journey.\"");
                 await m_Writer.WriteLineAsync($"    narrator \"Thank you for playing!\"");
-                await m_Writer.WriteLineAsync("    return");
+                await m_Writer.WriteLineAsync("    jump _quit");
                 await m_Writer.WriteLineAsync();
             }
         }
+
     }
 }
