@@ -55,6 +55,11 @@ namespace InventaiNovel
         public Dictionary<int, int> PreviousChoices { get; set; } = new Dictionary<int, int>();
 
         /// <summary>
+        /// Ending tales for the last scene
+        /// </summary>
+        public string[] EndingTales { get; set; } = Array.Empty<string>();
+
+        /// <summary>
         /// Scene-specific context based on previous choices
         /// </summary>
         public string SceneContext { get; set; } = string.Empty;

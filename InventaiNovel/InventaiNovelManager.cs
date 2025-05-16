@@ -252,22 +252,52 @@ namespace InventaiNovel
                     // Continue without image - the Scene class should handle null BackgroundImage
                 }
 
-            var scene = new Scene
-            {
-                    Id = Scene.SceneIdCounter++,
-                    Depth = depth,
-                    Characters = new List<Character>(pCharacters),  // Create a new list to avoid reference issues
-                    BackgroundImage = [],
-                    BgImagePrompt = imagePrompt,
-                    MetaData = pCharacters.Select(c => c.MetaData ?? "No metadata").ToList(),
-                    Narrative = narrative,
-                    Options = options,
-                    PreviousChoices = new Dictionary<int, int>(previousChoices ?? new Dictionary<int, int>()),
-                    SceneContext = sceneContext,
-                    NextSceneIds = new List<int>()  // Will be populated later
-            };
-            
-            m_Scenes.Add(scene);
+                var scene = new Scene
+                {
+                        Id = Scene.SceneIdCounter++,
+                        Depth = depth,
+                        Characters = new List<Character>(pCharacters),  // Create a new list to avoid reference issues
+                        BackgroundImage = [],
+                        BgImagePrompt = imagePrompt,
+                        MetaData = pCharacters.Select(c => c.MetaData ?? "No metadata").ToList(),
+                        Narrative = narrative,
+                        Options = options,
+                        PreviousChoices = new Dictionary<int, int>(previousChoices ?? new Dictionary<int, int>()),
+                        SceneContext = sceneContext,
+                        NextSceneIds = new List<int>()  // Will be populated later
+                };
+
+                // If it is the last scene, set the EndingTales
+                if (depth == m_MaxDepth)
+                {
+                    foreach (var sceneOption in options)
+                    {
+                        var endingTale = m_TextAgent.CompleteMessage($"Create an ending tale for the scene {depth} with the following option: {sceneOption}" +
+                        $"The context is: {sceneContext}" +
+                        $"The narrative is: {narrative}" +
+                        $"The characters are: {string.Join(", ", pCharacters.Select(c => c.Name ?? "Unknown"))}" +
+                        $"The available choices are: {string.Join(", ", options)}" +
+                        $"The ending tale should be engaging and not exceed 3-5 short sentences." +
+                        $"Format the response as a single string without any additional formatting or JSON." +
+                        $"Ensure the response is valid and contains a coherent ending tale." +
+                        $"The ending tale should not contain the choices themselves." +
+                        $"The ending tale should be split into sentences and not exceed 200 characters.");
+                        if (!string.IsNullOrWhiteSpace(endingTale))
+                        {
+                            scene.EndingTales = scene.EndingTales.Append(endingTale).ToArray();
+                        }
+                        else
+                        {
+                            scene.EndingTales = scene.EndingTales.Append("The story concludes...").ToArray();
+                        }
+                    }
+                }
+                else
+                {
+                    scene.EndingTales = Array.Empty<string>();
+                }
+
+                m_Scenes.Add(scene);
                 Console.WriteLine($"Created scene {depth} with {options.Count} choices");
             }
             catch (Exception ex)

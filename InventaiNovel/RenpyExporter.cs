@@ -72,7 +72,7 @@ namespace InventaiNovel
             await m_Writer.WriteLineAsync("    style.nvl_window.xmargin = 50");
             await m_Writer.WriteLineAsync("    style.nvl_window.bottom_margin = 50");  // Changed from ymargin to bottom_margin
             await m_Writer.WriteLineAsync("    style.nvl_window.top_padding = 0");  // Added to remove top padding
-            await m_Writer.WriteLineAsync("    style.nvl_window.ypos = 0.8");  // Position the window lower on screen
+            await m_Writer.WriteLineAsync("    style.nvl_window.ypos = 0.92");  // Position the window lower on screen
             await m_Writer.WriteLineAsync("    style.nvl_window.yfill = False");  // Don't fill the whole height
             await m_Writer.WriteLineAsync("    style.nvl_window.yanchor = 1.0");  // Anchor to bottom
             await m_Writer.WriteLineAsync();
@@ -119,6 +119,9 @@ namespace InventaiNovel
             await m_Writer.WriteLineAsync("    style.character_dialogue.size = 24");
             await m_Writer.WriteLineAsync("    style.character_dialogue.color = \"#FFFFFF\"");
             await m_Writer.WriteLineAsync();
+            await m_Writer.WriteLineAsync("    style.nvl_menu_choice = Style(style.nvl_dialogue)");
+            await m_Writer.WriteLineAsync("    style.nvl_menu_choice.size = 16"); // Smaller NVL menu text
+            await m_Writer.WriteLineAsync("    style.nvl_menu_choice.color = \"#FFD700\"");
         }
 
         /// <summary>
@@ -282,13 +285,13 @@ namespace InventaiNovel
                     await WriteChoiceAction(sceneIndex, scene, option.index);
                 }
             }
-            else if (scene.Depth < m_MaxDepth)
+            else if (scene.Depth <= m_MaxDepth)
             {
-                await m_Writer.WriteLineAsync($"    jump end_{sceneIndex + 2}");
+                await m_Writer.WriteLineAsync($"    jump end_{scene.Id}_0");
             }
             else
             {
-                await m_Writer.WriteLineAsync("    jump end_1");
+                await m_Writer.WriteLineAsync("    jump end_1_0");
             }
             await m_Writer.WriteLineAsync();
         }
@@ -308,11 +311,11 @@ namespace InventaiNovel
             }
             else if (scene.Depth == m_MaxDepth)
             {
-                await m_Writer.WriteLineAsync($"            jump end_{choiceIndex + 1}");
+                await m_Writer.WriteLineAsync($"            jump end_{scene.Id}_{choiceIndex}");
             }
             else
             {
-                await m_Writer.WriteLineAsync($"            jump end_{choiceIndex + 1}");
+                await m_Writer.WriteLineAsync($"            jump end_{scene.Id}_{choiceIndex}");
             }
         }
 
@@ -331,19 +334,48 @@ namespace InventaiNovel
         /// </summary>
         private async Task WriteEndings()
         {
-            int numEndings = m_Scenes.Count > 0 && m_Scenes.Last().Options?.Count > 0
-                ? m_Scenes.Last().Options.Count
-                : 1;
-
-            await m_Writer.WriteLineAsync("# Game endings");
-            for (int i = 0; i < numEndings; i++)
+            var endingScenes = m_Scenes.Where(s => s.Depth == m_MaxDepth).ToList();
+            if (endingScenes.Count == 0)
             {
-                await m_Writer.WriteLineAsync($"label end_{i + 1}:");
-                await m_Writer.WriteLineAsync($"    scene black with fade");
-                await m_Writer.WriteLineAsync($"    narrator \"You reached the ending of your journey.\"");
-                await m_Writer.WriteLineAsync($"    narrator \"Thank you for playing!\"");
+                await m_Writer.WriteLineAsync("# Game endings");
+                await m_Writer.WriteLineAsync("label end_1:");
+                await m_Writer.WriteLineAsync("    scene black with fade");
+                await m_Writer.WriteLineAsync("    narrator \"You have reached the end of your journey. Thank you for playing!\"");
                 await m_Writer.WriteLineAsync("    jump _quit");
                 await m_Writer.WriteLineAsync();
+                return;
+            }
+            else
+            {
+                foreach (var scene in endingScenes)
+                {
+                    foreach (var choice in scene.Options.Select((text, index) => new { text, index }))
+                    {
+                        await m_Writer.WriteLineAsync($"label end_{scene.Id}_{choice.index}:");
+                        await m_Writer.WriteLineAsync($"    scene black with fade");
+                        foreach (var para in scene.EndingTales)
+                        {
+                            var tokens = Regex.Split(para, @"(?<=[\.!?])\s+")
+                                .Select(token => token.Trim())
+                                .Where(token => !string.IsNullOrWhiteSpace(token));
+
+                            foreach (var token in tokens)
+                            {
+                                var escapedToken = EscapeRenpyText(token);
+                                await m_Writer.WriteLineAsync($"    narrator \"{escapedToken}\"");
+                                await m_Writer.WriteLineAsync("    pause 0.3");
+                            }
+
+                            await m_Writer.WriteLineAsync("    pause 0.5");
+                            await m_Writer.WriteLineAsync("    nvl clear");
+                        }
+
+                        await m_Writer.WriteLineAsync($"    narrator \"You reached the ending of your journey.\"");
+                        await m_Writer.WriteLineAsync($"    narrator \"Thank you for playing!\"");
+                        await m_Writer.WriteLineAsync("    jump _quit");
+                        await m_Writer.WriteLineAsync();
+                    }
+                }
             }
         }
 
